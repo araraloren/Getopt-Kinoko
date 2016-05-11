@@ -1,0 +1,19 @@
+{
+    "perl"        : "6",
+    "name"        : "zef",
+    "version"     : "*",
+    "description" : "It's like [cpanm] wearing high heels with a tracksuit",
+    "depends"     : [ ],
+    "provides"    : {
+        "Getopt::Kinoko"				: "lib/Getopt/Kinoko.pm6",
+        "Getopt::Kinoko::Exception"		: "lib/Getopt/Kinoko/Exception.pm6",
+        "Getopt::Kinoko::OptionSet"		: "lib/Getopt/Kinoko/OptionSet.pm6",
+        "Getopt::Kinoko::Option"		: "lib/Getopt/Kinoko/Option.pm6",
+        "Getopt::Kinoko::Parser"		: "lib/Getopt/Kinoko/Parser.pm6"
+    },
+    "authors" : "araraloren",
+    "support" : {
+        "bugtracker" : "https://github.com/ugexe/zef/issues"
+    },
+    "source-url"  : "git://github.com/ugexe/zef.git"
+}
