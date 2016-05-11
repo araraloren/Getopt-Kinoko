@@ -9,7 +9,13 @@ class X::Kinoko is Exception {
 }
 
 #| throw this exception when parse failed
-class X::Kinoko::Fail is Exception { }
+class X::Kinoko::Fail is Exception {
+    has $.msg handles <Str>;
+
+    method message() {
+        $!msg;
+    }
+}
 
 #| warnings
 class W::Kinoko {

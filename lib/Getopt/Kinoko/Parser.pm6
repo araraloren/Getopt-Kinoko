@@ -29,7 +29,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
                     }
                 }
                 else {
-                    X::Kinoko::Fail.new().throw;
+                    X::Kinoko::Fail.new(msg => "$optname: Invalid option.").throw;
                 }
             }
             default {
@@ -67,7 +67,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                     @args.unshift: | ( '-' X~ $optname.split("", :skip-empty) );
                 }
                 else {
-                    X::Kinoko::Fail.new().throw;
+                    X::Kinoko::Fail.new(msg => "$optname: Invalid option.").throw;
                 }
             }
             when /^ [<lprefix> || <sprefix>] <.&optname> / {
@@ -82,7 +82,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                     }
                 }
                 else {
-                    X::Kinoko::Fail.new().throw;
+                    X::Kinoko::Fail.new(msg => "$optname: Invalid option.").throw;
                 }
             }
             default {
