@@ -1,6 +1,7 @@
 
 use v6;
 
+use Getopt::Kinoko::DeepClone;
 use Getopt::Kinoko::Exception;
 
 role Option {
@@ -9,9 +10,7 @@ role Option {
     has &!cb;       #= option callback signature(Option -->)
     has $!force;    #= option optional
 
-    #=[
-        public initialize function
-    ]
+    #=[public initialize method]
     method !initialize(:$sn, :$ln, :$force, :&cb) {
         unless $sn.defined || $ln.defined {
             X::Kinoko.new(msg => 'Need option name.').throw();
@@ -133,7 +132,7 @@ role Option {
 #=[
     inetger option
 ]
-class Option::Integer does Option {
+class Option::Integer does Option does DeepClone {
     has Int $!value;
 
     method new(:$sn, :$ln, :$force, :&cb, :$value) {
@@ -194,10 +193,15 @@ class Option::Integer does Option {
     method is-integer() {
         True;
     }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            :$!sn, :$!ln, :&!cb, :$!force, value => $!value);
+    }
 }
 
-class Option::String does Option {
-    has Str $!value;
+class Option::String does Option does DeepClone {
+    has Str $!value ;
 
     method new(:$sn, :$ln, :$force, :&cb, :$value) {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
@@ -260,9 +264,14 @@ class Option::String does Option {
     method is-string() {
         True;
     }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            :$!sn, :$!ln, :&!cb, :$!force, value => $!value);
+    }
 }
 
-class Option::Array does Option {
+class Option::Array does Option does DeepClone {
     has @!value;
 
     method new(:$sn, :$ln, :$force, :&cb, :$value) {
@@ -326,9 +335,14 @@ class Option::Array does Option {
     method is-array() {
         True;
     }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            :$!sn, :$!ln, :&!cb, :$!force, value => DeepClone.deep-clone(@!value));
+    }
 }
 
-class Option::Hash does Option {
+class Option::Hash does Option does DeepClone {
     has %!value;
 
     method new(:$sn, :$ln, :$force, :&cb, :$value) {
@@ -392,12 +406,17 @@ class Option::Hash does Option {
     method is-hash() {
         True;
     }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            :$!sn, :$!ln, :&!cb, :$!force, value => DeepClone.deep-clone(%!value));
+    }
 }
 
 #=[
     boolean option
 ]
-class Option::Boolean does Option {
+class Option::Boolean does Option does DeepClone {
     has Bool $!value;
 
     method new(:$sn, :$ln, :$force, :&cb, :$value) {
@@ -460,6 +479,11 @@ class Option::Boolean does Option {
 
     method is-boolean() {
         True;
+    }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            :$!sn, :$!ln, :&!cb, :$!force, value => $!value);
     }
 }
 

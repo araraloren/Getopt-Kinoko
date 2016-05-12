@@ -2,9 +2,10 @@
 use v6;
 
 use Getopt::Kinoko::Option;
+use Getopt::Kinoko::DeepClone;
 use Getopt::Kinoko::Exception;
 
-class OptionSet does Positional {
+class OptionSet does Positional does DeepClone {
     has Option @!options handles < EXISTS-POS keys values >;
     has        &!callback;
 
@@ -12,7 +13,7 @@ class OptionSet does Positional {
         self.bless(callback => &noa-callback).append($optionset-str);
     }
 
-    submethod BUILD(:@!options, :&!callback) { }
+    submethod BUILD(:@!options, :&!callback = Block) { }
 
     method has(Str $name, :$long, :$short) {
         for @!options -> $opt {
@@ -168,5 +169,10 @@ class OptionSet does Positional {
         }
 
         $usage;
+    }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(), 
+            callback => &!callback, options => DeepClone.deep-clone(@!options));
     }
 }

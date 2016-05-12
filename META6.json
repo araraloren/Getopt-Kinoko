@@ -5,11 +5,12 @@
     "description" : "A command line parsing tool which written in Perl6",
     "depends"     : [ ],
     "provides"    : {
-        "Getopt::Kinoko"				: "lib/Getopt/Kinoko.pm6",
-        "Getopt::Kinoko::Exception"		: "lib/Getopt/Kinoko/Exception.pm6",
-        "Getopt::Kinoko::OptionSet"		: "lib/Getopt/Kinoko/OptionSet.pm6",
-        "Getopt::Kinoko::Option"		: "lib/Getopt/Kinoko/Option.pm6",
-        "Getopt::Kinoko::Parser"		: "lib/Getopt/Kinoko/Parser.pm6"
+        "Getopt::Kinoko"				    : "lib/Getopt/Kinoko.pm6",
+        "Getopt::Kinoko::Exception"		    : "lib/Getopt/Kinoko/Exception.pm6",
+        "Getopt::Kinoko::OptionSet"		    : "lib/Getopt/Kinoko/OptionSet.pm6",
+        "Getopt::Kinoko::Option"		    : "lib/Getopt/Kinoko/Option.pm6",
+        "Getopt::Kinoko::Parser"		    : "lib/Getopt/Kinoko/Parser.pm6",
+        "Getopt::Kinoko::DeepClone"         : "lib/Getopt/Kinoko/DeepClone.pm6"
     },
 	"auth" : "github:araraloren",
     "authors" : "Loren",
