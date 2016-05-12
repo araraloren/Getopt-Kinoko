@@ -1,0 +1,6 @@
++ 公共选项类？ OptionSet 之间可以用公共的选项
+	+ common option class
++ 单选选项类？ 几个 Option 中一时只有一个选项可以被设置
+	+ multi option behavior like radio button
++ 深拷贝
+	+ add deep copy
