@@ -33,7 +33,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
                 }
             }
             default {
-                if !optset.is-set-noa || !optset.process-noa(arg) {
+                if !optset.is-set-noa-callback || !optset.process-noa(arg) {
                     @noa.push: arg;
                 }
             }
@@ -88,7 +88,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
             default {
                 #W::Kinoko.new("Argument behind boolean option.").warn if $last-is-boolean;
                 #| argument behind boolean option also be a noa
-                if !optset.is-set-noa || !optset.process-noa(arg) {
+                if !optset.is-set-noa-callback || !optset.process-noa(arg) {
                     @noa.push: arg;
                 }
             }

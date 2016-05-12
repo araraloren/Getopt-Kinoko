@@ -12,6 +12,10 @@ class X::Kinoko is Exception {
 class X::Kinoko::Fail is Exception {
     has $.msg handles <Str>;
 
+    method new(:$msg = "") {
+        self.bless(:$msg);
+    }
+
     method message() {
         $!msg;
     }

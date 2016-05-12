@@ -9,8 +9,8 @@ class OptionSet does Positional does DeepClone {
     has Option @!options handles < EXISTS-POS keys values >;
     has        &!callback;
 
-    method new(Str $optionset-str = "", &noa-callback?) {
-        self.bless(callback => &noa-callback).append($optionset-str);
+    method new(Str $optionset-str = "", :&callback) {
+        self.bless(:&callback).append($optionset-str);
     }
 
     submethod BUILD(:@!options, :&!callback = Block) { }
@@ -74,8 +74,12 @@ class OptionSet does Positional does DeepClone {
         return self.has($name);
     }
 
-    method is-set-noa() {
+    method is-set-noa-callback() {
         &!callback.defined;
+    }
+
+    method set-noa-callback(&callback) {
+        &!callback = &callback;
     }
 
     method process-noa($noa) {
@@ -121,17 +125,12 @@ class OptionSet does Positional does DeepClone {
         self;
     }
 
-    multi method push(Str $option) {
-        @!options.push: create-option($option);
-        self;
-    }
-
-    multi method push(Str $option, &callback) {
+    multi method push(Str $option, :&callback) {
         @!options.push: create-option($option, cb => &callback);
         self;
     }
 
-    multi method push(Str $option, &callback, $value) {
+    multi method push(Str $option, $value, :&callback, ) {
         @!options.push: create-option($option, cb => &callback, :$value);
         self;
     }
@@ -172,7 +171,7 @@ class OptionSet does Positional does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             callback => &!callback, options => DeepClone.deep-clone(@!options));
     }
 }
