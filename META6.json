@@ -1,8 +1,8 @@
 {
     "perl"        : "6",
-    "name"        : "zef",
-    "version"     : "*",
-    "description" : "It's like [cpanm] wearing high heels with a tracksuit",
+    "name"        : "Getopt::Kinoko",
+    "version"     : "0.0.1",
+    "description" : "A command line parsing tool which written in Perl6",
     "depends"     : [ ],
     "provides"    : {
         "Getopt::Kinoko"				: "lib/Getopt/Kinoko.pm6",
@@ -11,9 +11,7 @@
         "Getopt::Kinoko::Option"		: "lib/Getopt/Kinoko/Option.pm6",
         "Getopt::Kinoko::Parser"		: "lib/Getopt/Kinoko/Parser.pm6"
     },
-    "authors" : "araraloren",
-    "support" : {
-        "bugtracker" : "https://github.com/ugexe/zef/issues"
-    },
-    "source-url"  : "git://github.com/ugexe/zef.git"
+	"auth" : "github:araraloren",
+    "authors" : "Loren",
+    "source-url"  : "git://github.com/araraloren/Getopt-Kinoko.git"
 }
