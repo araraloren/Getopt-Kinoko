@@ -5,10 +5,10 @@ use Getopt::Kinoko::Option;
 use Getopt::Kinoko::Exception;
 
 class OptionSet does Positional {
-    has Option @!options handles <EXISTS-POS>;
+    has Option @!options handles < EXISTS-POS keys values >;
     has        &!callback;
 
-    method new(Str $optionset-str, &noa-callback?) {
+    method new(Str $optionset-str = "", &noa-callback?) {
         self.bless(callback => &noa-callback).append($optionset-str);
     }
 
@@ -110,12 +110,23 @@ class OptionSet does Positional {
 
     #=[ option-string;option-string;... ]
     method append(Str $optionset-str) {
+        return self if $optionset-str.trim.chars == 0;
         @!options.push(create-option($_)) for $optionset-str.split(';', :skip-empty);
         self;
     }
 
     multi method push(*%option) {
         @!options.push: create-option(|%option);
+        self;
+    }
+
+    multi method push(Str $option) {
+        @!options.push: create-option($option);
+        self;
+    }
+
+    multi method push(Str $option, &callback) {
+        @!options.push: create-option($option, cb => &callback);
         self;
     }
 

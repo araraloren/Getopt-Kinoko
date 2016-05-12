@@ -123,6 +123,8 @@ role Option {
 
     method set-value($value) { ... }
 
+    method set-value-callback($value) { ... }
+
     method value { ... }
 
     method major-type { ... }
@@ -138,7 +140,7 @@ class Option::Integer does Option {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
     }
 
-    method !initialize-value($value, :$use-default = True) {
+    method !initialize-value($value, :$use-default = True, :$callcb = False) {
         my $name = self.is-long ?? '--' ~ self.long-name !! '-' ~ self.short-name;
         my Int $int;
 
@@ -161,6 +163,7 @@ class Option::Integer does Option {
             X::Kinoko.new(msg => ": Option $name need a value.").throw();
         }
         $!value = $int;
+        self.callback()($!value) if $callcb && self.has-callback;
         self;
     }
 
@@ -174,6 +177,10 @@ class Option::Integer does Option {
 
     method set-value($value) {
         self!initialize-value($value, :!use-default);
+    }
+
+    method set-value-callback($value) {
+        self!initialize-value($value, :!use-default, :callcb);
     }
 
     method value {
@@ -196,7 +203,7 @@ class Option::String does Option {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
     }
 
-    method !initialize-value($value, :$use-default = True) {
+    method !initialize-value($value, :$use-default = True, :$callcb = False) {
         my $name = self.is-long ?? '--' ~ self.long-name !! '-' ~ self.short-name;
         my Str $string;
 
@@ -222,6 +229,7 @@ class Option::String does Option {
             X::Kinoko.new(msg => ": Option $name need a value.").throw();
         }
         $!value = $string;
+        self.callback()($!value) if $callcb && self.has-callback;
         self;
     }
 
@@ -235,6 +243,10 @@ class Option::String does Option {
 
     method set-value($value) {
         self!initialize-value($value, :!use-default);
+    }
+
+    method set-value-callback($value) {
+        self!initialize-value($value, :!use-default, :callcb);
     }
 
     method value {
@@ -257,7 +269,7 @@ class Option::Array does Option {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
     }
 
-    method !initialize-value($value, :$use-default = True) {
+    method !initialize-value($value, :$use-default = True, :$callcb = False) {
         my $name = self.is-long ?? '--' ~ self.long-name !! '-' ~ self.short-name;
         my @array;
 
@@ -283,6 +295,7 @@ class Option::Array does Option {
             X::Kinoko.new(msg => ": Option $name need a value.").throw();
         }
         @!value.append: @array;
+        self.callback()(@!value) if $callcb && self.has-callback;
         self;
     }
 
@@ -296,6 +309,10 @@ class Option::Array does Option {
 
     method set-value($value) {
         self!initialize-value($value, :!use-default);
+    }
+
+    method set-value-callback($value) {
+        self!initialize-value($value, :!use-default, :callcb);
     }
 
     method value {
@@ -318,7 +335,7 @@ class Option::Hash does Option {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
     }
 
-    method !initialize-value($value, :$use-default = True) {
+    method !initialize-value($value, :$use-default = True, :$callcb = False) {
         my $name = self.is-long ?? '--' ~ self.long-name !! '-' ~ self.short-name;
         my %hash;
 
@@ -344,6 +361,7 @@ class Option::Hash does Option {
             X::Kinoko.new(msg => ": Option $name need a value.").throw();
         }
         %!value.append: %hash;
+        self.callback()(%!value) if $callcb && self.has-callback;
         self;
     }
 
@@ -357,6 +375,10 @@ class Option::Hash does Option {
 
     method set-value($value) {
         self!initialize-value($value, :!use-default);
+    }
+
+    method set-value-callback($value) {
+        self!initialize-value($value, :!use-default, :callcb);
     }
 
     method value {
@@ -382,7 +404,7 @@ class Option::Boolean does Option {
         self!initialize(:$sn, :$ln, :$force, :&cb)!initialize-value($value);
     }
 
-    method !initialize-value($value, :$use-default = True) {
+    method !initialize-value($value, :$use-default = True, :$callcb = False) {
         my $name = self.is-long ?? '--' ~ self.long-name !! '-' ~ self.short-name;
         my Bool $bool;
 
@@ -408,6 +430,7 @@ class Option::Boolean does Option {
             X::Kinoko.new(msg => ": Option $name need a value.").throw();
         }
         $!value = $bool;
+        self.callback()($!value) if $callcb && self.has-callback;
         self;
     }
 
@@ -421,6 +444,10 @@ class Option::Boolean does Option {
 
     method set-value($value) {
         self!initialize-value($value, :!use-default);
+    }
+
+    method set-value-callback($value) {
+        self!initialize-value($value, :!use-default, :callcb);
     }
 
     method value {

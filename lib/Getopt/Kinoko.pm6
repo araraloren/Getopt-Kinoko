@@ -8,7 +8,7 @@ use Getopt::Kinoko::Exception;
 
 class Getopt does Associative {
     has OptionSet   %!optionsets handles <AT-KEY EXISTS-KEY keys values kv>;
-    has Option      $!current;
+    has OptionSet   $!current;
     has Bool        $!generate-method;
     has Bool        $!gnu-style;
     has             @!args;
@@ -34,10 +34,14 @@ class Getopt does Associative {
         %!optionsets.push: $name => OptionSet.new($optset-string, &callback);
     }
 
+    method current() returns OptionSet {
+        $!current;
+    }
+
     method parse(@!args = @*ARGS, Str :$prefix = "", :&parser = &kinoko-parser) returns Array {
         my @noa;
 
-        for %!optionsets -> $current {
+        for %!optionsets.values -> $current {
             try {
                 @noa := $!gnu-style ??
                     &parser(@!args, $current, True) !! &parser(@!args, $current);

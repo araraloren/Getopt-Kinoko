@@ -22,7 +22,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
                     $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
 
                     if +@args > 0 || $opt.is-boolean {
-                        $opt.set-value($opt.is-boolean ?? True !! @args.shift);
+                        $opt.set-value-callback($opt.is-boolean ?? True !! @args.shift);
                     }
                     else {
                         X::Kinoko.new(msg => $optname ~ ": Need a value.").throw;
@@ -61,7 +61,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                 if optset.has($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
                     $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
                     X::Kinoko.new(msg => $optname ~ ": Need a value.").throw if !$<optvalue>.defined && !$opt.is-boolean;
-                    $opt.set-value($opt.is-boolean ?? True !! $<optvalue>);
+                    $opt.set-value-callback($opt.is-boolean ?? True !! $<optvalue>);
                 }
                 elsif $<sprefix>.defined {
                     @args.unshift: | ( '-' X~ $optname.split("", :skip-empty) );
@@ -75,7 +75,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                     $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
                     #$last-is-boolean = $opt.is-boolean;
                     if +@args > 0 || $opt.is-boolean {
-                        $opt.set-value($opt.is-boolean ?? True !! @args.shift);
+                        $opt.set-value-callback($opt.is-boolean ?? True !! @args.shift);
                     }
                     else {
                         X::Kinoko.new(msg => $optname ~ ": Need a value.").throw;
