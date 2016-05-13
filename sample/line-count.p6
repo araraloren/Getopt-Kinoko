@@ -9,17 +9,17 @@ my @file-lines;
 
 my OptionSet $optset .= new(
     "w|ignore-white-line=b;print-sum=b;s|sort=b;desc=b;h|help=b",
-    &dispatch-dir-file
+    callback => &dispatch-dir-file
 );
 
 getopt($optset);
 
-usage() if $optset<h>.value;
+usage() if $optset<h>;
 
 #MAIN
 {
     my &getcount = -> $fl {
-        $fl.[1] + ($optset<w>.value ?? 0 !! $fl.[2]);
+        $fl.[1] + ($optset<w> ?? 0 !! $fl.[2]);
     };
 
     my @output;
@@ -30,13 +30,13 @@ usage() if $optset<h>.value;
             [$_.[0], &getcount($_)];
         };
 
-        if $optset{'print-sum'}.value {
+        if $optset{'print-sum'} {
             say [+] @output.map: { $_.[1] };
         }
         else {
             if $optset.get("sort", :long).value {
                 @output = @output.sort: {
-                    $optset<desc>.value ?? ($^a.[1] < $^b.[1]) !!
+                    $optset<desc> ?? ($^a.[1] < $^b.[1]) !!
                         ($^a.[1] > $^b.[1]);
                 };
             }
