@@ -8,13 +8,18 @@ use Getopt::Kinoko;
 class RunComplier {
 	has Getopt 		$.getopt;
 	has OptionSet	$!optset;
+	has 			$.current;
 	has 			@!incode;
 	has 			$!out-file;
-	has 			$!elf-file;
+	has 			$!target;
+	has 			$!cmd;
 
 	method run {
-		$!optset := $!getopt{$!getopt.current};
-		@!incode := $!optset<e>.value;
+		$!optset := $!getopt{$!current};
+		@!incode  = DeepClone.deep-clone($!optset<e>);
+
+		help($!getopt)
+			if $!optset<h>;
 
 		self.prepare-code();
 
@@ -22,19 +27,162 @@ class RunComplier {
 			if +@!incode < 1;
 
 		self.print-code
-			if $!optset<p>.values.elems > 1;
+			if $!optset<p>.elems > 1;
 
 		self.generate-file;
+
+		self.generate-cmd;
+
+		self.run-cmd;
+
+		if $!optset<S> || $!optset<E> {
+			self.cat-target;
+		}
+		else {
+			self.run-target;
+		}
+
+		self.clean;
+	}
+
+	method run-target {
+		try {
+			shell 'chmod +x ' ~ $!target;
+			shell $!target;
+			CATCH {
+				default {
+					self.clean;
+					...
+				}
+			}
+		}
+	}
+
+	method cat-target {
+		say "$!target".IO.slurp;
+	}
+	
+
+	method run-cmd {
+		try {
+			shell $!cmd;
+			CATCH {
+				default {
+					self.clean;
+					...
+				}
+			}
+		}
+	}
+
+	method clean {
+		unless $!optset.get("output").has-value {
+			unlink $!out-file;
+		}
+		unlink $!target;
+	}
+
+	method generate-cmd {
+		$!cmd = self.get-complier($!optset<c>, $!current) ~ ' ';
+
+		for $!optset<flags> -> $flag {
+			$!cmd ~= '-' ~ $flag ~ ' ';
+		}
+
+		if $!optset.has-value("I") {
+			for $!optset<I> -> $ipath {
+				$!cmd ~= '-I' ~ $ipath ~ ' ';
+			}
+		}
+
+		for $!optset<D> -> $define {
+			$!cmd ~= '-D' ~ $define ~ ' ';
+		}
+
+		for $!optset<L> -> $linkpath {
+			$!cmd ~= '-L' ~ $linkpath ~ ' ';
+		}
+
+		for $!optset<l> -> $link {
+			$!cmd ~= '-l' ~ $link ~ ' ';
+		}
+
+		#note $!cmd;
+
+		$!cmd ~= self.generate-target;
+	}
+
+	method generate-target() {
+		if $!optset<S> {
+			$!target = "{$!out-file}.S";
+
+			return "-S -o $!target " ~ $!out-file; 
+		}
+		elsif $!optset<E> {
+			$!target = "{$!out-file}.i";
+
+			return "-E -o $!target " ~ $!out-file;
+		}
+		else {
+			$!target = "{$!out-file}.elf";
+
+			return "-o $!target " ~ $!out-file;
+		}
+	}
+
+	method get-complier(Str $complier, Str $language) {
+		given $complier {
+			when /gcc/ {
+				return {c => 'gcc', cpp => 'g++'}{$language};
+			}
+			when /clang/ {
+				return {c => 'clang', cpp => 'clang++'}{$language};
+			}
+		}
+		help($!getopt);
 	}
 
 	method generate-file {
 		$!out-file = self.get-file-name;
+
+		my $fh = open($!out-file, :w) 
+					or die "Can not save code to " ~ $!out-file;
+
+		# generate include
+		if $!optset.has-value("include") {
+			for $!optset<i> -> $include {
+				$fh.put: '#include <' ~ $include ~ '>';
+			}
+		} 
+
+		# generate pre-processer command
+		if $!optset.get("pp").has-value {
+			$fh.put: $*OUT.nl-out for ^2;
+			for $!optset<pp> -> $pp {
+				$fh.put: '#' ~ $pp ~ $*OUT.nl-out;
+			}
+		}
+
+		# generate using for cpp
+		if $!current eq "cpp" {
+			$fh.put: $*OUT.nl-out for ^2;
+			if $!optset.get("using").has-value {
+				for $!optset<u> -> $using {
+					$fh.put: 'using ' ~ $using ~ ';';
+				}
+			}
+		}
+
+		# generate code
+		$fh.put: $_ for @!incode;
+
+		$fh.close();
 	}
 
 	method get-file-name {
-		my $path = $!optset<o>.has-value ?? $!optset<o>.value ~ '/' !! '/var/';
+		my $path = $!optset.get("o").has-value ?? $!optset<o> ~ '/' !! '/var/';
 
-		$path ~ $*PID ~ '-' ~ time ~ '.' ~ $!getopt.current;
+		$path ~ $*PID ~ '-' ~ time ~ '.' ~ $!current;
 	}
 
 	method print-code {
@@ -46,7 +194,7 @@ class RunComplier {
 	method read-from-user {
 		@!incode = [];
 
-		my $end := $!optset<end>.value;
+		my $end := $!optset<end>;
 
 		say "Please input your code, make sure your code correct.";
     	say "Enter " ,  $end ~ " end input.";
@@ -63,10 +211,13 @@ class RunComplier {
 	}
 
 	method prepare-code {
-		self.read-from-user if $!optset<r>.value;
-		unless $!optset<r> {
+		self.read-from-user if $!optset<r>;
+
+		# note @!incode;
+
+		unless ($!optset<r> || +@!incode < 1) {
 			@!incode.unshift('{');
-			@!incode.unshift($!optset<main>.value);
+			@!incode.unshift($!optset<main>);
 			@!incode.push: 'return 0;';
 			@!incode.push: '}';
 		}
@@ -81,6 +232,7 @@ $opts.push("i|include 	= a");
 $opts.push("l|link 		= a");
 $opts.push("h|help		= b");
 $opts.push("p|print 	= b");
+$opts.push(" |pp 		= a");
 $opts.push("end = s", '@@CODEEND');
 $opts.push("e = a");
 $opts.push("I = a");
@@ -99,6 +251,7 @@ $opts.push(
 );
 $opts.push(
 	"m|main = s",
+	'int main(void)',
 	callback => -> $main is rw {
 		die "$main: Invalid main function header"
 			if $main !~~ /
@@ -116,10 +269,11 @@ $opts.push(
 				] <.ws> \) <.ws>
 			/;
 		$main = $main.trim;
-	}
+	},
 );
 $opts.push(
 	"c|complier = s",
+	'gcc',
 	callback => -> $complier {
 		die "$complier: Not support this complier"
 			if $complier !(elem) < gcc clang >;
@@ -132,12 +286,16 @@ $opts{'flags'} = <Wall Wextra Werror>;
 #| deep clone for cpp
 my $opts-c		= $opts;
 my $opts-cpp 	= $opts.deep-clone;
+my $current		= "";
 
 #| set default value for c
 $opts-c{'include'} = <stdio.h>;
 $opts-c.set-noa-callback( -> $noa {
 	if $noa ne "c" {
 		X::Kinoko::Fail.new().throw;
+	}
+	else {
+		$current = $noa;
 	}
 });
 
@@ -149,6 +307,9 @@ $opts-cpp.set-noa-callback( -> $noa {
 	if $noa ne "cpp" {
 		X::Kinoko::Fail.new().throw;
 	}
+	else {
+		$current = $noa;
+	}
 });
 
 # parser command line
@@ -156,14 +317,17 @@ my $getopt = Getopt.new().push('c', $opts-c).push('cpp', $opts-cpp);
 
 $getopt.parse;
 
-run-snippet($getopt.current, $getopt);
+#note ' ~~ >' ~ $current;
+
+run-snippet($current, $getopt);
 
 #| helper function
-multi sub run-snippet($str where $str ~~ /c|cpp/, $getopt) {
-	RunComplier.new(getopt => $getopt).run;
+multi sub run-snippet(Str $current where $current ~~ /c|cpp/, $getopt) {
+	RunComplier.new(:$current, getopt => $getopt).run;
 }
 
 multi sub run-snippet($str, $getopt) {
+	note " ~~ なにそれ !!";
 	help($getopt);
 }
 
