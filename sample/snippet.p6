@@ -308,7 +308,7 @@ $opts-cpp.set-noa-callback( -> $noa {
 		$current = $noa;
 	}
 });
-for $opts-cpp.values { say $_.perl; }
+
 # parser command line
 my $getopt = Getopt.new().push('c', $opts-c).push('cpp', $opts-cpp);
 
