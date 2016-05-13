@@ -7,27 +7,24 @@ use Getopt::Kinoko;
 
 class RunComplier {
 	has Getopt 		$.getopt;
-	has OptionSet	$!optset;
-	has 			$.current;
-	has 			@!incode;
-	has 			$!out-file;
-	has 			$!target;
-	has 			$!cmd;
+	has OptionSet $!optset;
+	has $.current;
+	has @!incode;
+	has $!out-file;
+	has $!target;
+	has $!cmd;
 
 	method run {
 		$!optset := $!getopt{$!current};
 		@!incode  = DeepClone.deep-clone($!optset<e>);
 
-		help($!getopt)
-			if $!optset<h>;
+		help($!getopt) if $!optset<h>;
 
 		self.prepare-code();
 
-		help($!getopt)
-			if +@!incode < 1;
+		help($!getopt) if +@!incode < 1;
 
-		self.print-code
-			if $!optset<p>.elems > 1;
+		self.print-code if $!optset<p>.elems > 1;
 
 		self.generate-file;
 
@@ -146,7 +143,7 @@ class RunComplier {
 		$!out-file = self.get-file-name;
 
 		my $fh = open($!out-file, :w) 
-					or die "Can not save code to " ~ $!out-file;
+			or die "Can not save code to " ~ $!out-file;
 
 		# generate include
 		if $!optset.has-value("include") {
@@ -197,7 +194,7 @@ class RunComplier {
 		my $end := $!optset<end>;
 
 		say "Please input your code, make sure your code correct.";
-    	say "Enter " ,  $end ~ " end input.";
+		say "Enter " ,  $end ~ " end input.";
 
 		my \stdin = $*IN;
 
