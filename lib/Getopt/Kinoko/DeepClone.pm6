@@ -16,7 +16,7 @@ role DeepClone {
 	}
 
 	multi method deep-clone(Str:D:) {
-		self.Str;
+		clone-helper(self);
 	}
 
 	multi method deep-clone(@array) {
@@ -40,6 +40,6 @@ role DeepClone {
 	}
 
 	multi method deep-clone() {
-		self;
+		clone-helper(self);
 	}
 }
