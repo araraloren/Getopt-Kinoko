@@ -44,7 +44,7 @@ class OptionSet does Positional does DeepClone {
         my $option := @!options[$index];
 
         Proxy.new(
-            FETCH => method () { $option; },
+            FETCH => method () { $option.value; },
             STORE => method ($value) {
                 $option.set-value($value);
             }
@@ -63,7 +63,7 @@ class OptionSet does Positional does DeepClone {
         }
 
         Proxy.new(
-            FETCH => method () { $option; },
+            FETCH => method () { $option.value; },
             STORE => method ($value) {
                 $option.set-value($value);
             }
