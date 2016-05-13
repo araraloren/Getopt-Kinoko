@@ -31,6 +31,10 @@ role DeepClone {
 		$str.Str;
 	}
 
+	multi method deep-clone(DeepClone $other) {
+		$other.deep-clone;
+	}
+
 	multi method deep-clone($other) {
 		$other;
 	}
