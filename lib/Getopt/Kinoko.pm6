@@ -62,7 +62,7 @@ class Getopt does Associative {
 
                 CATCH {
                     when X::Kinoko::Fail {
-                        ;
+                        $!current = "";
                     }
                     default {
                         note .message;

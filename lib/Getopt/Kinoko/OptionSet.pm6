@@ -22,6 +22,15 @@ class OptionSet does Positional does DeepClone {
         False
     }
 
+    method has-value(Str $name, :$long, :$short) {
+        for @!options -> $opt {
+            if $opt.match-name($name, :$long, :$short) {
+                return $opt.has-value;
+            }
+        }
+        False
+    }
+
     method get(Str $name, :$long, :$short) {
         for @!options -> $opt {
             return $opt if $opt.match-name($name, :$long, :$short);
@@ -41,33 +50,39 @@ class OptionSet does Positional does DeepClone {
 
     #| can modify value
     method AT-POS(::?CLASS::D: $index) is rw {
-        my $option := @!options[$index];
-
-        Proxy.new(
-            FETCH => method () { $option.value; },
+        return @!options[$index].value;
+        #`[Proxy.new(
+            FETCH => method () { 
+                if @!options[$index].value ~~ Array {
+                    return @!options[$index].value.List;
+                } 
+                @!options[$index].value; 
+            },
             STORE => method ($value) {
-                $option.set-value($value);
+                @!options[$index].set-value($value);
             }
-        );
+        );]
     }
 
     #| can modify value
     method AT-KEY(::?CLASS::D: $name) is rw {
-        my $option = Option;
-
         for @!options -> $opt {
             if $opt.match-name($name) {
-                $option := $opt;
-                last;
+                return $opt.value;
+                #| this proxy has problem when access array
+                #`[return Proxy.new(
+                    FETCH => method () { 
+                        if $opt.value ~~ Array {
+                            return $opt.value.List;
+                        }
+                        $opt.value; 
+                    },
+                    STORE => method ($value) {
+                        $opt.set-value($value);
+                    }
+                );]
             }
         }
-
-        Proxy.new(
-            FETCH => method () { $option.value; },
-            STORE => method ($value) {
-                $option.set-value($value);
-            }
-        );
     }
 
     method EXISTS-KEY($name) {
