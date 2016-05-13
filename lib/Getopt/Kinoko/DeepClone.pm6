@@ -27,8 +27,8 @@ role DeepClone {
 		%hash>>.&clone-helper;
 	}
 
-	multi method deep-clone(Str $str ) {
-		$str.Str;
+	multi method deep-clone(Str $str) {
+		$str;
 	}
 
 	multi method deep-clone(DeepClone $other) {
