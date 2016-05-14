@@ -5,6 +5,8 @@ use lib "../";
 
 use Getopt::Kinoko;
 
+my $is-win32 = $*DISTRO ~~ /mswin32/;
+
 class RunComplier {
 	has Getopt 		$.getopt;
 	has OptionSet $!optset;
@@ -44,8 +46,8 @@ class RunComplier {
 
 	method run-target {
 		try {
-			shell 'chmod +x ' ~ $!target;
-			shell $!target;
+			shell 'chmod +x ' ~ $!target unless $is-win32;
+			shell ($is-win32 ?? 'start ' !! '') ~ $!target;
 			CATCH {
 				default {
 					self.clean;
@@ -240,7 +242,7 @@ $opts.push("S = b");
 $opts.push("E = b");
 $opts.push(
 	"o|output = s",
-	$*DISTRO ~~ /mswin32/ ?? './' !! '/tmp/', # save . for win32 
+	$is-win32 ?? './' !! '/tmp/', # save . for win32
 	callback => -> $output is rw {
 		die "Invalid directory"
 			if $output.IO !~~ :d;
