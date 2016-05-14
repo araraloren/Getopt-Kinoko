@@ -75,9 +75,7 @@ class RunComplier {
 	}
 
 	method clean {
-		unless $!optset.get("output").has-value {
-			unlink $!out-file;
-		}
+		unlink $!out-file unless $!optset<t>;
 		unlink $!target;
 	}
 
@@ -233,6 +231,7 @@ $opts.push("h|help		= b");
 $opts.push("p|print 	= b");
 $opts.push(" |pp 		= a");
 $opts.push("end = s", '@@CODEEND');
+$opts.push("t = b"); # do not delete temporary .c
 $opts.push("e = a");
 $opts.push("I = a");
 $opts.push("D = a");
