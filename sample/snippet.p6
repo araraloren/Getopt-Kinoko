@@ -58,7 +58,7 @@ class RunComplier {
 	method cat-target {
 		say "$!target".IO.slurp;
 	}
-	
+
 
 	method run-cmd {
 		try {
@@ -113,7 +113,7 @@ class RunComplier {
 		if $!optset<S> {
 			$!target = "{$!out-file}.S";
 
-			return "-S -o $!target " ~ $!out-file; 
+			return "-S -o $!target " ~ $!out-file;
 		}
 		elsif $!optset<E> {
 			$!target = "{$!out-file}.i";
@@ -142,7 +142,7 @@ class RunComplier {
 	method generate-file {
 		$!out-file = self.get-file-name;
 
-		my $fh = open($!out-file, :w) 
+		my $fh = open($!out-file, :w)
 			or die "Can not save code to " ~ $!out-file;
 
 		# generate include
@@ -150,7 +150,7 @@ class RunComplier {
 			for $!optset<i> -> $include {
 				$fh.put: '#include <' ~ $include ~ '>';
 			}
-		} 
+		}
 
 		# generate pre-processer command
 		if $!optset.get("pp").has-value {
@@ -177,7 +177,7 @@ class RunComplier {
 	}
 
 	method get-file-name {
-		my $path = $!optset.get("o").has-value ?? $!optset<o> ~ '/' !! '/var/';
+		my $path = $!optset<o>;
 
 		$path ~ $*PID ~ '-' ~ time ~ '.' ~ $!current;
 	}
@@ -240,9 +240,10 @@ $opts.push("S = b");
 $opts.push("E = b");
 $opts.push(
 	"o|output = s",
+	$*DISTRO ~~ /mswin32/ ?? './' !! '/tmp/', # save . for win32 
 	callback => -> $output is rw {
 		die "Invalid directory"
-			if $output.IO ~~ :d;
+			if $output.IO !~~ :d;
 		$output = $output.IO.abspath;
 	}
 );
