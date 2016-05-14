@@ -7,7 +7,7 @@ use Getopt::Kinoko;
 
 my $is-win32 = $*DISTRO ~~ /mswin32/;
 
-class RunComplier {
+class RunCompiler {
 	has Getopt 		$.getopt;
 	has OptionSet $!optset;
 	has $.current;
@@ -32,7 +32,7 @@ class RunComplier {
 
 		self.generate-cmd;
 
-		self.run-cmd;
+		self.run-compiler;
 
 		if $!optset<S> || $!optset<E> {
 			self.cat-target;
@@ -44,17 +44,13 @@ class RunComplier {
 		self.clean;
 	}
 
+	method run-compiler {
+		self.run-cmd($!cmd);
+	}
+
 	method run-target {
-		try {
-			shell 'chmod +x ' ~ $!target unless $is-win32;
-			shell ($is-win32 ?? 'start ' !! '') ~ $!target;
-			CATCH {
-				default {
-					self.clean;
-					...
-				}
-			}
-		}
+		self.run-cmd("chmod +x " ~ $!target) unless $is-win32;
+		self.run-cmd(($is-win32 ?? 'start ' !! '') ~ $!target);
 	}
 
 	method cat-target {
@@ -62,9 +58,11 @@ class RunComplier {
 	}
 
 
-	method run-cmd {
+	method run-cmd($cmd) {
 		try {
-			shell $!cmd;
+			my $out = QX($cmd); # change shell to QX
+
+			print $out if $out.chomp.chars > 1;
 			CATCH {
 				default {
 					self.clean;
@@ -80,7 +78,7 @@ class RunComplier {
 	}
 
 	method generate-cmd {
-		$!cmd = self.get-complier($!optset<c>, $!current) ~ ' ';
+		$!cmd = self.get-Compiler($!optset<c>, $!current) ~ ' ';
 
 		for $!optset<flags> -> $flag {
 			$!cmd ~= '-' ~ $flag ~ ' ';
@@ -127,8 +125,8 @@ class RunComplier {
 		}
 	}
 
-	method get-complier(Str $complier, Str $language) {
-		given $complier {
+	method get-Compiler(Str $Compiler, Str $language) {
+		given $Compiler {
 			when /gcc/ {
 				return {c => 'gcc', cpp => 'g++'}{$language};
 			}
@@ -271,11 +269,11 @@ $opts.push(
 	},
 );
 $opts.push(
-	"c|complier = s",
+	"c|Compiler = s",
 	'gcc',
-	callback => -> $complier {
-		die "$complier: Not support this complier"
-			if $complier !(elem) < gcc clang >;
+	callback => -> $Compiler {
+		die "$Compiler: Not support this Compiler"
+			if $Compiler !(elem) < gcc clang >;
 	}
 );
 
@@ -322,7 +320,7 @@ run-snippet($current, $getopt);
 
 #| helper function
 multi sub run-snippet(Str $current where $current ~~ /c|cpp/, $getopt) {
-	RunComplier.new(:$current, getopt => $getopt).run;
+	RunCompiler.new(:$current, getopt => $getopt).run;
 }
 
 multi sub run-snippet($str, $getopt) {
