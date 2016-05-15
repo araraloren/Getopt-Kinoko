@@ -34,11 +34,13 @@ class RunCompiler {
 
 		self.run-compiler;
 
-		if $!optset<S> || $!optset<E> {
-			self.cat-target;
-		}
-		else {
-			self.run-target;
+		if $!target.IO ~~ :e {
+			if $!optset<S> || $!optset<E> {
+				self.cat-target;
+			}
+			else {
+				self.run-target;
+			}
 		}
 
 		self.clean;
@@ -63,6 +65,8 @@ class RunCompiler {
 			my $out = QX($cmd); # change shell to QX
 
 			print $out if $out.chomp.chars >= 1;
+
+			return True;
 			CATCH {
 				default {
 					self.clean;
