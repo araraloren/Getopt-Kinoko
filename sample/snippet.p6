@@ -62,7 +62,7 @@ class RunCompiler {
 		try {
 			my $out = QX($cmd); # change shell to QX
 
-			print $out if $out.chomp.chars > 1;
+			print $out if $out.chomp.chars >= 1;
 			CATCH {
 				default {
 					self.clean;
