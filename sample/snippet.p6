@@ -26,7 +26,7 @@ class RunCompiler {
 
 		help($!getopt) if +@!incode < 1;
 
-		self.print-code if $!optset<p>.elems > 1;
+		self.print-code if $!optset<p>;
 
 		self.generate-file;
 
