@@ -108,14 +108,10 @@ use Getopt::Kinoko::Option;
 }
 
 subtest {
-
-	my $callback-flag = False;
-
 	my $opt = create-option(
-			"c|count=i", value 	=> 2, 
-			cb 		=> -> $value { ok 5 == $value, "callback called."; } 
+			"c|count=i", value 	=> 2,
+			cb 		=> -> $value { ok 5 == $value, "callback called."; }
 		);
-
 	{
 		ok $opt.is-short, "short option check ok.";
 		ok $opt.is-long, "long option check ok.";
@@ -127,18 +123,34 @@ subtest {
 		ok $opt.short-name eq "c", "short option name ok";
 		ok $opt.long-name eq "count", "long option name ok";
 	}
-
 	{
 		ok $opt.value eq 2, "option defalut value ok.";
 		$opt.set-value-callback(5);
 		ok $opt.value eq 5, "option set value ok.";
 	}
-
-	
 }, "Integer option ok.";
 
 subtest {
-
+	my $opt = create-option(
+			"n|name=s", value 	=> 'Jim',
+			cb 		=> -> $value { ok $value eq 'Jim Green', "callback called."; }
+		);
+	{
+		ok $opt.is-short, "short option check ok.";
+		ok $opt.is-long, "long option check ok.";
+		ok $opt.is-string, "type check ok.";
+		ok $opt.has-callback, "callback check ok.";
+		ok $opt.has-value, "value exists check ok.";
+	}
+	{
+		ok $opt.short-name eq "n", "short option name ok";
+		ok $opt.long-name eq "name", "long option name ok";
+	}
+	{
+		ok $opt.value eq 'Jim', "option defalut value ok.";
+		$opt.set-value-callback('Jim Green');
+		ok $opt.value eq 'Jim Green', "option set value ok.";
+	}
 }, "String option ok.";
 
 done-testing;
