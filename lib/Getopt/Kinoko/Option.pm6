@@ -154,6 +154,9 @@ class Option::Integer does Option does DeepClone {
                     }
                 }
             }
+            else {
+                $int = $value;
+            }
         }
         elsif $use-default {
             $int = self!default-value;
@@ -564,16 +567,10 @@ multi sub create-option(Str:D $option, :$value, :&cb) is export {
     				$sn = ~$<name>;
     			}
     		}
-    		elsif $<ln>.defined && $<rn>.defined {
-    			if ~$<ln>.chars > ~$<rn>.chars {
-    				$ln = ~$<ln> if ~$<ln>.chars > 0;
-    				$sn = ~$<rn> if ~$<rn>.chars > 0;
-    			}
-    			else {
-    				$ln = ~$<rn> if ~$<rn>.chars > 0;
-    				$sn = ~$<ln> if ~$<ln>.chars > 0;
-    			}
-    		}
+    		elsif $<ln>.defined || $<rn>.defined {
+                $sn = ~$<ln> if $<ln>.defined && ~$<ln>.chars > 0;
+                $ln = ~$<rn> if $<rn>.defined && ~$<rn>.chars > 0;
+            }
     		$mt = ~$<mt>;
     		$r  = True if $<r>.defined && ~$<r> eq '!';
     	}
@@ -588,7 +585,7 @@ multi sub create-option(Str:D $option, :$value, :&cb) is export {
             array   => 'a',
         };
 
-        $opt-str ~~ s/\=(string|integer|hash|boolean|array)/{%l2s{$0}}/;
+        $opt-str ~~ s/\=(string|integer|hash|boolean|array)/\={%l2s{$0}}/;
         $opt-str;
     };
 
