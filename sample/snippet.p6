@@ -273,7 +273,7 @@ $opts.push(
 	},
 );
 $opts.push(
-	"c|Compiler = s",
+	"c|compiler = s",
 	'gcc',
 	callback => -> $Compiler {
 		die "$Compiler: Not support this Compiler"
@@ -281,15 +281,15 @@ $opts.push(
 	}
 );
 
-#| set default value common
+#= set default value common
 $opts{'flags'} = <Wall Wextra Werror>;
 
-#| deep clone for cpp
+#= deep clone for cpp
 my $opts-c		= $opts;
 my $opts-cpp 	= $opts.deep-clone;
 my $current		= "";
 
-#| set default value for c
+#= set default value for c
 $opts-c{'include'} = <stdio.h>;
 $opts-c.set-noa-callback( -> $noa {
 	if $noa ne "c" {
@@ -300,9 +300,9 @@ $opts-c.set-noa-callback( -> $noa {
 	}
 });
 
-#| add using option
+#= add using option
 $opts-cpp.push("u|using 	= a");
-#| set default value for cpp
+#= set default value for cpp
 $opts-cpp{'include'} = <iostream>;
 $opts-cpp.set-noa-callback( -> $noa {
 	if $noa ne "cpp" {
@@ -313,7 +313,7 @@ $opts-cpp.set-noa-callback( -> $noa {
 	}
 });
 
-# parser command line
+#= parser command line
 my $getopt = Getopt.new().push('c', $opts-c).push('cpp', $opts-cpp);
 
 $getopt.parse;
