@@ -153,4 +153,73 @@ subtest {
 	}
 }, "String option ok.";
 
+subtest {
+	my $opt = create-option(
+			"a|animal=a", value 	=> 'Cock',
+			cb 		=> -> $value { ok $value eq ["Cock", "Rabbit"], "callback called."; }
+		);
+	{
+		ok $opt.is-short, "short option check ok.";
+		ok $opt.is-long, "long option check ok.";
+		ok $opt.is-array, "type check ok.";
+		ok $opt.has-callback, "callback check ok.";
+		ok $opt.has-value, "value exists check ok.";
+	}
+	{
+		ok $opt.short-name eq "a", "short option name ok";
+		ok $opt.long-name eq "animal", "long option name ok";
+	}
+	{
+		ok $opt.value eq ["Cock"], "option defalut value ok.";
+		$opt.set-value-callback('Rabbit');
+		ok $opt.value eq ["Cock", "Rabbit"], "option set value ok.";
+	}
+}, "Array option ok.";
+
+subtest {
+	my $opt = create-option(
+			"l|shopping-list=h", value => %{ dish => 5 },
+			cb 		=> -> $value { ok $value eq %{ dish => 5, bowl => 2 }, "callback called."; }
+		);
+	{
+		ok $opt.is-short, "short option check ok.";
+		ok $opt.is-long, "long option check ok.";
+		ok $opt.is-hash, "type check ok.";
+		ok $opt.has-callback, "callback check ok.";
+		ok $opt.has-value, "value exists check ok.";
+	}
+	{
+		ok $opt.short-name eq "l", "short option name ok";
+		ok $opt.long-name eq "shopping-list", "long option name ok";
+	}
+	{
+		ok $opt.value eq %{ dish => 5 }, "option defalut value ok.";
+		$opt.set-value-callback(%{ bowl => 2 });
+		ok $opt.value eq %{ dish => 5, bowl => 2 }, "option set value ok.";
+	}
+}, "Hash option ok.";
+
+subtest {
+	my $opt = create-option(
+			"f|formated=b", value => False,
+			cb 		=> -> $value { ok $value , "callback called."; }
+		);
+	{
+		ok $opt.is-short, "short option check ok.";
+		ok $opt.is-long, "long option check ok.";
+		ok $opt.is-boolean, "type check ok.";
+		ok $opt.has-callback, "callback check ok.";
+		ok $opt.has-value, "value exists check ok.";
+	}
+	{
+		ok $opt.short-name eq "f", "short option name ok";
+		ok $opt.long-name eq "formated", "long option name ok";
+	}
+	{
+		nok $opt.value , "option defalut value ok.";
+		$opt.set-value-callback(True);
+		ok $opt.value , "option set value ok.";
+	}
+}, "Hash option ok.";
+
 done-testing;
