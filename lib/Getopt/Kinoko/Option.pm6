@@ -359,13 +359,9 @@ class Option::Hash does Option does DeepClone {
 
         if $value.defined {
             if $value !~~ Hash {
-                try {
-                    %hash = $value.Hash;
-                    CATCH {
-                        default {
-                            X::Kinoko.new(msg => "$value: Option $name need hash.").throw();
-                        }
-                    }
+                %hash = self!parse-as-hash($value);
+                unless %hash {
+                    X::Kinoko.new(msg => "$value: Option $name need hash.").throw();
                 }
             }
             else {
@@ -381,6 +377,25 @@ class Option::Hash does Option does DeepClone {
         %!value.append: %hash;
         self.callback()(%!value) if $callcb && self.has-callback;
         self;
+    }
+
+    method !parse-as-hash($value) {
+        my regex hkey { .* };
+        my regex comma { '=>' };
+        my regex hvalue { .* };
+
+        if $value.Str ~~
+            /^ <.ws> [\' <hkey> \' || <hkey> ] <.ws> <.&comma>
+                <.ws> [\' <hvalue> \' || <hvalue> ]
+            |
+            \:<hkey>\<<hvalue>\>
+            |
+            \:<hkey> \{[ \' <hvalue> \' || <hvalue> ]\}/ {
+            return %($<hkey>.Str => $<hvalue>.Str);
+        }
+        else {
+            return Hash;
+        }
     }
 
     method !default-value {
