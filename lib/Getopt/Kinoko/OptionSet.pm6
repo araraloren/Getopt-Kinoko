@@ -5,8 +5,9 @@ use Getopt::Kinoko::Option;
 use Getopt::Kinoko::DeepClone;
 use Getopt::Kinoko::Exception;
 
-class OptionSet does Positional does DeepClone {
-    has Option @!options handles < EXISTS-POS keys values >;
+class OptionSet does DeepClone {
+    has Option @!options;
+    has        @!names;
     has        &!callback;
 
     method new(Str $optionset-str = "", :&callback) {
@@ -97,6 +98,14 @@ class OptionSet does Positional does DeepClone {
         return self.has($name);
     }
 
+    method EXISTS-POS(Int $index) {
+        $index < self.Numeric();
+    }
+
+    method values() {
+        return @!options;
+    }
+
     method is-set-noa-callback() {
         &!callback.defined;
     }
@@ -162,23 +171,23 @@ class OptionSet does Positional does DeepClone {
         how to convenient forward parameters ?
     ]
     method push-str(Str :$short, Str :$long, Bool :$force, :&callback, Str :$value) {
-        self.add-option(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<s>);
+        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<s>);
     }
 
     method push-int(Str :$short, Str :$long, Bool :$force, :&callback, Int :$value) {
-        self.add-option(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<i>);
+        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<i>);
     }
 
     method push-arr(Str :$short, Str :$long, Bool :$force, :&callback, :$value) {
-        self.add-option(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<a>);
+        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<a>);
     }
 
     method push-hash(Str :$short, Str :$long, Bool :$force, :&callback, :$value) {
-        self.add-option(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<h>);
+        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<h>);
     }
 
     method push-bool(Str :$short, Str :$long, Bool :$force, :&callback, Bool :$value) {
-        self.add-option(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<b>);
+        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<b>);
     }
 
     method usage() {
