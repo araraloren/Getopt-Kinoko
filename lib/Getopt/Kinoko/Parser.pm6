@@ -61,7 +61,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                 if optset.has($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
                     $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
                     X::Kinoko.new(msg => $optname ~ ": Need a value.").throw if !$<optvalue>.defined && !$opt.is-boolean;
-                    $opt.set-value-callback($opt.is-boolean ?? True !! $<optvalue>);
+                    $opt.set-value-callback($opt.is-boolean ?? True !! $<optvalue>.Str);
                 }
                 elsif $<sprefix>.defined {
                     @args.unshift: | ( '-' X~ $optname.split("", :skip-empty) );
