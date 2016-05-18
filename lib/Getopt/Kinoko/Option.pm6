@@ -199,7 +199,7 @@ class Option::Integer does Option does DeepClone {
 
     multi method deep-clone() {
         #| call initialize-value !!!
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             :$!sn, :$!ln, :&!cb, :$!force)!initialize-value(DeepClone.deep-clone($!value));
     }
 }
@@ -270,7 +270,7 @@ class Option::String does Option does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             :$!sn, :$!ln, :&!cb, :$!force)!initialize-value(DeepClone.deep-clone($!value));
     }
 }
@@ -341,7 +341,7 @@ class Option::Array does Option does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             :$!sn, :$!ln, :&!cb, :$!force)!initialize-value(DeepClone.deep-clone(@!value));;
     }
 }
@@ -388,7 +388,7 @@ class Option::Hash does Option does DeepClone {
     }
 
     method has-value {
-        %!value.defined;
+        %!value.elems > 0;
     }
 
     method set-value($value) {
@@ -412,7 +412,7 @@ class Option::Hash does Option does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             :$!sn, :$!ln, :&!cb, :$!force)!initialize-value(DeepClone.deep-clone(%!value));;
     }
 }
@@ -486,7 +486,7 @@ class Option::Boolean does Option does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(), 
+        self.bless(self.CREATE(),
             :$!sn, :$!ln, :&!cb, :$!force)!initialize-value(DeepClone.deep-clone($!value));
     }
 }

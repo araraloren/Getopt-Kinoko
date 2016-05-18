@@ -38,11 +38,19 @@ class OptionSet does Positional does DeepClone {
         Option;
     }
 
-    method set(Str $name, $value, :&callback, :$long, :$short) {
+    method set-value(Str $name, $value, :$long, :$short) {
         for @!options -> $opt {
             if $opt.match-name($name, :$long, :$short) {
                 $opt.set-value($value);
-                $opt.set-callback(&callback) if ?&callback;
+                last;
+            }
+        }
+    }
+
+    method set-callback(Str $name, &callback, :$long, :$short) {
+        for @!options -> $opt {
+            if $opt.match-name($name, :$long, :$short) {
+                $opt.set-callback(&callback);
                 last;
             }
         }
@@ -52,11 +60,11 @@ class OptionSet does Positional does DeepClone {
     method AT-POS(::?CLASS::D: $index) is rw {
         return @!options[$index].value;
         #`[Proxy.new(
-            FETCH => method () { 
+            FETCH => method () {
                 if @!options[$index].value ~~ Array {
                     return @!options[$index].value.List;
-                } 
-                @!options[$index].value; 
+                }
+                @!options[$index].value;
             },
             STORE => method ($value) {
                 @!options[$index].set-value($value);
@@ -71,11 +79,11 @@ class OptionSet does Positional does DeepClone {
                 return $opt.value;
                 #| this proxy has problem when access array
                 #`[return Proxy.new(
-                    FETCH => method () { 
+                    FETCH => method () {
                         if $opt.value ~~ Array {
                             return $opt.value.List;
                         }
-                        $opt.value; 
+                        $opt.value;
                     },
                     STORE => method ($value) {
                         $opt.set-value($value);
