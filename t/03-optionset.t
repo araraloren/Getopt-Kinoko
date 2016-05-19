@@ -80,7 +80,7 @@ lives-ok {
     nok $optset.is-set-noa-callback(), "check noa callback ok";
 
     $optset.set-noa-callback(-> $noa {
-        note " not a option argument: " ~ $noa;
+        return $noa.defined;
     });
     ok $optset.is-set-noa-callback(), "check noa callback ok";
 }
