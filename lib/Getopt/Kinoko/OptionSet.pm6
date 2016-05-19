@@ -5,11 +5,15 @@ use Getopt::Kinoko::Option;
 use Getopt::Kinoko::DeepClone;
 use Getopt::Kinoko::Exception;
 
+#| OptionSet can manager a variety of options
 class OptionSet does DeepClone {
     has Option @!options;
     has        @!names;
     has        &!callback;
 
+    #| C<&optionset-str> is a option set string such as "a=a;c=i;"
+    #| options delimited with semicolon
+    #| C<&callback> is NOA process function
     method new(Str $optionset-str = "", :&callback) {
         self.bless(:&callback).append($optionset-str);
     }

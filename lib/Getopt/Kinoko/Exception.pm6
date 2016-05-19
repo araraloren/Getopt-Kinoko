@@ -1,5 +1,6 @@
 use v6;
 
+#| throw this expection when error
 class X::Kinoko is Exception {
     has $.msg handles <Str>;
 
@@ -21,7 +22,7 @@ class X::Kinoko::Fail is Exception {
     }
 }
 
-#| warnings
+#| warnings, not using
 class W::Kinoko {
     has $.msg handles <Str>;
 

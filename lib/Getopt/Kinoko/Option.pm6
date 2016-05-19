@@ -10,7 +10,7 @@ role Option {
     has &!cb;       #= option callback signature(Option -->)
     has $!force;    #= option optional
 
-    #=[public initialize method]
+    #| public initialize method
     method !initialize(:$sn, :$ln, :$force, :&cb) {
         unless $sn.defined || $ln.defined {
             X::Kinoko.new(msg => 'Need option name.').throw();
@@ -28,58 +28,75 @@ role Option {
 
     submethod BUILD(:$!sn, :$!ln, :&!cb, :$!force) { }
 
+    #| has short name
     method is-short {
         $!sn.defined;
     }
 
+    #| has long name
     method is-long {
         $!ln.defined;
     }
 
+    #| optional ?
     method is-force {
         ?$!force;
     }
 
+    #| is integer option
     method is-integer() {
         False;
     }
 
+    #| is string option
     method is-string() {
         False;
     }
 
+    #| is boolean option
     method is-boolean() {
         False;
     }
 
+    #| is array option
     method is-array() {
         False;
     }
 
+    #| is hash option
     method is-hash() {
         False;
     }
 
+    #| has callback
     method has-callback {
         &!cb.defined;
     }
 
+    #| get short name of this option;
+    #| return null string when not have a short name
     method short-name {
         self.is-short ?? $!sn !! "";
     }
 
+    #| get long name of this option;
+    #| return null string when not have a long name
     method long-name {
         self.is-long ?? $!ln !! "";
     }
 
+    #| get callback
     method callback {
         &!cb;
     }
 
+    #| set callback
     method set-callback(&cb) {
         &!cb = &cb;
     }
 
+    #| match with short or long name
+    #| :long and :short both not set equivalent to :long and :short both set
     method match-name(Str $name, :$long, :$short) {
         my ($lb, $sb) = ($name eq self.long-name, $name eq self.short-name);
 
@@ -120,12 +137,17 @@ role Option {
 
     method has-value { ... }
 
+    #| set value
+    #| "set" is mean push when option is hash or array
     method set-value($value) { ... }
 
+    #| set value and then call callback
     method set-value-callback($value) { ... }
 
     method value { ... }
 
+    #| get option type
+    #| will return long option type such as "string", "boolean" ..
     method major-type { ... }
 }
 
