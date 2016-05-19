@@ -61,7 +61,7 @@ lives-ok {
 {
     lives-ok {
         $optset.set-value("shopping-list", %(coffee => 1));
-        $optset.set-callback("shopping-list", -> $value { say "current -> " ~ $value; });
+        $optset.set-callback("shopping-list", -> $value {  "current -> " ~ $value; });
     }, " set value, set callback ok";
 }
 
@@ -80,7 +80,7 @@ lives-ok {
     nok $optset.is-set-noa-callback(), "check noa callback ok";
 
     $optset.set-noa-callback(-> $noa {
-        return $noa.defined;
+        $noa.defined;
     });
     ok $optset.is-set-noa-callback(), "check noa callback ok";
 }
