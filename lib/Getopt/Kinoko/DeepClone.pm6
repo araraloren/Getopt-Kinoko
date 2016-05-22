@@ -28,7 +28,7 @@ role DeepClone {
 	}
 
 	multi method deep-clone(Str $str) {
-		$str;
+		clone-helper($str);
 	}
 
 	multi method deep-clone(DeepClone $other) {
@@ -36,7 +36,7 @@ role DeepClone {
 	}
 
 	multi method deep-clone($other) {
-		$other;
+		clone-helper($other);
 	}
 
 	multi method deep-clone() {
