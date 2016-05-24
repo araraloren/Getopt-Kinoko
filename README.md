@@ -16,15 +16,16 @@ See sample.
 
  + install with panda
 
-	panda install Getopt::Kinoko
+	`panda install Getopt::Kinoko`
 
 + install with zef
 
-	zef install Getopt::Kinoko
+	`zef install Getopt::Kinoko`
 
 	If `zef install Getopt::Kinoko` not working, please run `zef update` first.
 
 + install
-	git clone https://github.com/araraloren/Getopt-Kinoko.git
 
-	cd Getopt-Kinoko && zef install .
+	`git clone https://github.com/araraloren/Getopt-Kinoko.git`
+
+	`cd Getopt-Kinoko && zef install` .
