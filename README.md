@@ -10,6 +10,8 @@ This module can help you parsing command line arguments. You can manager multi `
 
 具体可以参考项目中的例子。
 
+See sample.
+
 ## Installation
 
  + install with panda
@@ -17,7 +19,11 @@ This module can help you parsing command line arguments. You can manager multi `
 	panda install Getopt::Kinoko
 
 + install with zef
-	
+
+	zef install Getopt::Kinoko
+
+	If `zef install Getopt::Kinoko` not working, please run `zef update` first.
+
 + install
 	git clone https://github.com/araraloren/Getopt-Kinoko.git
 
