@@ -13,86 +13,63 @@ class Errno {
 
 # ErrnoFinder
 class ErrnoFinder {
-	has $!channel;
-
-	submethod BUILD(:$!channel = Channel.new) { }
+	has %!filter;
+	has $.path;
+	has @!errnos;
 
 	my regex include {
-		<.ws> '#' <.ws> 'include' <.ws> 
-		\< <.ws> $<header> = (<[\w./]>*) <.ws> \> <.ws>
+		<.ws> '#' <.ws> 'include' <.ws>
+		\< <.ws> $<header> = (.*) <.ws> \> <.ws>
 	}
 
 	my regex edefine {
-		<.ws> '#' <.ws> 'define' <.ws> 
-		$<errno> = ('E'\w*) <.ws> 
-		$<value> = (\d+) <.ws> 
+		<.ws> '#' <.ws> 'define' <.ws>
+		$<errno> = ('E'\w*) <.ws>
+		$<value> = (\d+) <.ws>
 		'/*' <.ws> $<comment> = (.*) <.ws> '*/'
 	}
 
-	method !abs-dirname(IO::Path $path) {
-		$path.abspath().IO.dirname;
-	}
-
-	method !filepath($curfile, $include) {
-		if $include ~~ /$\// {
+	method !filepath($include) {
+		if $include ~~ /^\// {
 			return $include;
 		}
-		return self!abs-dirname($curfile) ~ '/' ~ $include;
+		return $!path ~ '/' ~ $include;
 	}
 
 	method find(Str $file, $top = True) {
-		my @promises = [];
-        say $file;
-		await start {
-			my \fio = $file.IO;
+        return if %!filter{$file}:exists;
 
-			if fio ~~ :e && fio ~~ :f {
-				for fio.lines -> $line {
-					if $line ~~ /<include>/ {
-						push @promises, start {
-						    say "process -> ";
-						    say $<include>;
-						    say $<header>;
-							self.find(self!filepath(fio, ~$<include><header>), False);
-						};
-					}
-					elsif $line ~~ /<edefine>/ {
-						$!channel.send(
-							Errno.new(
-								errno 	=> ~$<edefine><errno>,
-								value 	=> +$<edefine><value>,
-								comment	=> ~$<edefine><comment>
-							)
+        %!filter{$file} = 1;
+
+		my \fio = $file.IO;
+
+		$!path = fio.abspath().IO.dirname if $top && !$!path.defined;
+
+		if fio ~~ :e && fio ~~ :f {
+			for fio.lines -> $line {
+				if $line ~~ /<include>/ {
+					self.find(self!filepath(~$<include><header>), False);
+				}
+				elsif $line ~~ /<edefine>/ {
+					@!errnos.push: Errno.new(
+							errno 	=> ~$<edefine><errno>,
+							value 	=> +$<edefine><value>,
+							comment	=> ~$<edefine><comment>.trim
 						);
-					}
 				}
 			}
 		}
-
-		await Promise.allof(@promises);
-
-		$!channel.close() if $top;
-	}
-
-	method traversal(&callback) {
-		while True {
-			try {
-				&callback($!channel.receive());
-				CATCH {
-					default {
-						last;
-					}
-				}
-			}
+		else {
+			say "errno !! " ~ $file;
 		}
 	}
 
 	method result() {
-		my @result = [];
+		@!errnos;
+	}
 
-		self.traversal(-> $r { @result.push($r); });
-
-		return @result;
+	method sorted-result() {
+		# NYI
 	}
 }
 
@@ -100,6 +77,12 @@ class ErrnoFinder {
 # create optionset
 my $opts = OptionSet.new("h|help=b;v|version=b;?=b;");
 
+$opts.push("l|list=b");
+$opts.push("e|errno=b");
+$opts.push("c|comment=b");
+$opts.push("n|number=b");
+$opts.push("r|regex=b");
+$opts.push("p|path=s", "/usr/include");
 $opts.push(
 	"i|errno-include=s",
 	"/usr/include/errno.h",
@@ -113,30 +96,21 @@ $opts.push(
 );
 
 # MAIN
-getopt($opts, :gnu-style);
+# errno [*option] [errno | regex]
+my @conds = getopt($opts, :gnu-style);
 
 # help and version
-if $opts<h> || $opts<help> {
-	usage();
-	exit(0);
-}
-
-if $opts<v> || $opts<version> {
-	version();
-	exit(0);
-}
-
-if $opts<?> {
-	version();
-	usage();
-	exit(0);
-}
+usage(0) 			if $opts<h> || $opts<help>;
+version(0) 			if $opts<v> || $opts<version>;
+usage(), version()  if $opts<?>;
 
 #| function
-sub usage() {
+sub usage($exit?) {
 	say $*PROGRAM-NAME ~ " " ~ $opts.usage;
+	exit($exit) if $exit.defined;
 }
 
-sub version() {
+sub version($exit?) {
 	say "version " ~ $VERSION ~ ", create by araraloren.";
+	exit($exit) if $exit.defined;
 }
