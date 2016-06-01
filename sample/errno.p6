@@ -7,7 +7,7 @@ state $VERSION = "0.0.1";
 # Errno
 class Errno {
 	has $.errno;
-	has $.value;
+	has $.number;
 	has $.comment;
 }
 
@@ -25,7 +25,7 @@ class ErrnoFinder {
 	my regex edefine {
 		<.ws> '#' <.ws> 'define' <.ws>
 		$<errno> = ('E'\w*) <.ws>
-		$<value> = (\d+) <.ws>
+		$<number> = (\d+) <.ws>
 		'/*' <.ws> $<comment> = (.*) <.ws> '*/'
 	}
 
@@ -53,15 +53,16 @@ class ErrnoFinder {
 				elsif $line ~~ /<edefine>/ {
 					@!errnos.push: Errno.new(
 							errno 	=> ~$<edefine><errno>,
-							value 	=> +$<edefine><value>,
+							number 	=> +$<edefine><number>,
 							comment	=> ~$<edefine><comment>.trim
 						);
 				}
 			}
 		}
-		else {
-			say "errno !! " ~ $file;
-		}
+	}
+
+	method count() {
+		+@!errnos;
 	}
 
 	method result() {
@@ -70,6 +71,59 @@ class ErrnoFinder {
 
 	method sorted-result() {
 		# NYI
+	}
+
+	#| need format ?
+	multi method list(@column where +@column == 0) {
+		for @!errnos -> $errno {
+			say ($errno.errno, $errno.number, $errno.comment).join("\t");
+		}
+	}
+
+	multi method list(@column where +@column > 0) {
+		for @!errnos -> $errno {
+			my @print;
+
+			@print.push: $errno."{$_}"() for @column;
+
+			say @print.join('\t');
+		}
+	}
+
+	sub remove(@conds, $str) {
+		for ^+@conds -> \i {
+			if @conds[i] eq $str {
+				@conds[i]:delete;
+				return True;
+			}
+		}
+		False;
+	}
+
+	method query-and-list($str, @conds is copy) {
+		for @!errnos -> $errno {
+			if remove(@conds, $errno."$str"()) {
+				say ($errno.errno, $errno.number, $errno.comment).join("\t");
+			}
+		}
+	}
+
+	sub remove-regex(@conds, $str) {
+		for ^+@conds -> \i {
+			if @conds[i] ~~ /$str/ {
+				@conds[i]:delete;
+				return True;
+			}
+		}
+		False;
+	}
+
+	method match-and-list($str, @conds is copy) {
+		for @!errnos -> $errno {
+			if remove-regex(@conds, $errno."$str"()) {
+				say ($errno.errno, $errno.number, $errno.comment).join("\t");
+			}
+		}
 	}
 }
 
@@ -82,7 +136,18 @@ $opts.push("e|errno=b");
 $opts.push("c|comment=b");
 $opts.push("n|number=b");
 $opts.push("r|regex=b");
-$opts.push("p|path=s", "/usr/include");
+#$opts.push("f|format=s");
+$opts.push(
+	"p|path=s", 
+	"/usr/include",
+	callback => -> $path {
+		my \io = $path.IO;
+
+		if io !~~ :e || io !~~ :d {
+			die "$path is not a valid path";
+		}
+	}
+);
 $opts.push(
 	"i|errno-include=s",
 	"/usr/include/errno.h",
@@ -103,6 +168,31 @@ my @conds = getopt($opts, :gnu-style);
 usage(0) 			if $opts<h> || $opts<help>;
 version(0) 			if $opts<v> || $opts<version>;
 usage(), version()  if $opts<?>;
+
+# find errno
+my $finder = ErrnoFinder.new(path => $opts<path>);
+
+$finder.find($opts<errno-include>);
+
+"Found nothing!".say unless $finder.count > 0;
+
+# generate type
+my @types = [];
+
+@types.push: "errno"	if $opts<errno>;
+@types.push: "number"	if $opts<number>;
+@types.push: "comment"	if $opts<comment>;
+
+# query && list
+if $opts<list> {
+	$finder.list(@types);
+}
+elsif $opts<regex> {
+	$finder.match-and-list(+@types > 0 ?? @types[0] !! "errno", @conds);
+}
+else {
+	$finder.query-and-list(+@types > 0 ?? @types[0] !! "errno", @conds);
+}
 
 #| function
 sub usage($exit?) {
