@@ -3,11 +3,6 @@ use v6;
 
 use Getopt::Kinoko::Exception;
 
-class Argument {
-    has $.value;
-    has $.index;
-}
-
 rule NonOption {
     has &.callback;
 }
