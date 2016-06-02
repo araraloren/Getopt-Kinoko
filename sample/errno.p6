@@ -110,8 +110,7 @@ class ErrnoFinder {
 
 	sub remove-regex(@conds, $str) {
 		for ^+@conds -> \i {
-			if @conds[i] ~~ /$str/ {
-				@conds[i]:delete;
+			if $str ~~ /"{@conds[i]}"/ {
 				return True;
 			}
 		}
