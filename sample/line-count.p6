@@ -5,76 +5,99 @@ use lib "../";
 
 use Getopt::Kinoko;
 
-my @file-lines;
+class LineInfo {
+    has $.path is rw;     # path
+    has $.line is rw;     # non-white-line count 
+    has $.white is rw;    # white-line count
+}
 
-my OptionSet $optset .= new(
-    "w|ignore-white-line=b;print-sum=b;s|sort=b;desc=b;h|help=b",
-    callback => &dispatch-dir-file
-);
+class OutputInfo {
+    has $.path is rw;
+    has $.count is rw;
+}
+
+my OptionSet $optset .= new();
+
+# insert *normal* group and *all*
+$optset.insert-normal("w|ignore-white-line=b;print-sum=b;s|sort=b;desc=b;h|help=b;|abspath=b");
+$optset.insert-all(&main);
 
 getopt($optset);
 
 usage() if $optset<h>;
 
-#MAIN
-{
-    my &getcount = -> $fl {
-        $fl.[1] + ($optset<w> ?? 0 !! $fl.[2]);
+# MAIN
+sub main(@arguments) {
+    usage() if +@arguments == 0;
+
+    my &output-convert = -> $info {
+        OutputInfo.new(
+            path => $info.path,
+            count => $optset<w> ?? $info.line !! ($info.line + $info.white)
+        );
     };
 
-    my @output;
+    my @infos = [];
 
-    if @file-lines.elems > 0 {
+    for @arguments -> $arg {
+        my \info := get-line-info(~$arg.value, :abspath($optset{'abspath'}));
 
-        @output = @file-lines.map: {
-            [$_.[0], &getcount($_)];
-        };
+        @infos.push: &output-convert(info);
+    }
 
-        if $optset{'print-sum'} {
-            say [+] @output.map: { $_.[1] };
-        }
-        else {
-            if $optset.get("sort", :long).value {
-                @output = @output.sort: {
-                    $optset<desc> ?? ($^a.[1] < $^b.[1]) !!
-                        ($^a.[1] > $^b.[1]);
-                };
-            }
-
-            for @output -> $fl {
-                say $fl.[0] ~ ': ' ~ $fl.[1];
-            }
-        }
+    if $optset{'print-sum'} {
+        say [+] @infos.map: { .count };
     }
     else {
-        usage();
+        if (+@infos > 1) && $optset.get-option("sort", :long).value {
+            @infos = @infos.sort: {
+                $$optset<desc> ?? 
+                    ($^a.count < $^b.count) !! ($^a.count > $^b.count);
+            };
+        }
+
+        for @infos {
+            say .path ~ " : " ~ .count;
+        }
     }
 }
 
 #| help function
-sub dispatch-dir-file($path) returns Bool {
-
-    line-count($path.Str.IO.open);
-
-    return True;
+multi sub get-line-info(Str $path, :$abspath) {
+    get-line-info($path.IO, :$abspath);
 }
 
-multi sub line-count(IO::Handle $fileh where $fileh ~~ :f) {
-    @file-lines.push: [$fileh.path.abspath, 0, 0];
+multi sub get-line-info(IO::Path $filep where $filep ~~ :f && $filep ~~ :r, :$abspath) {
+    my LineInfo $li .= new(
+        path => $abspath ?? $filep.abspath !! $filep.path, 
+        line => 0, white => 0
+    );
 
-    my \curr := @file-lines[@file-lines.end];
-
-    for $fileh.lines -> $line {
-        curr.[$line.chomp.chars == 0 ?? 2 !! 1]++;
+    for $filep.open.lines {
+        .chomp.chars == 0 ?? $li.white++ !! $li.line++;
     }
 
-    $fileh.close();
+    $li;
 }
 
-multi sub line-count(IO::Handle $handle) {
-    say $handle.path.abspath ~ ": Can not read file.";
+multi sub get-line-info(IO::Path $dirp where $dirp ~~ :d && $dirp ~~ :x, :$abspath) {
+    my LineInfo $li .= new(
+        path => $abspath ?? $dirp.path.abspath !! $dirp.path, 
+        line => 0, white => 0
+    );
 
-    $handle.cloe();
+    for $dirp.dir() -> $iop {
+        my \info := get-line-info($iop);
+
+        $li.line += info.line;
+        $li.white += info.white;
+    }
+
+    $li;
+}
+
+multi sub get-line-info(IO::Path $p, :$abspath) {
+    say $p.abspath ~ ": Can not read file.";
 }
 
 sub usage() {

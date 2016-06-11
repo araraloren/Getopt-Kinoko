@@ -146,6 +146,9 @@ role Option {
 
     method value { ... }
 
+    #| reset value
+    method reset { ... }
+
     #| get option type
     #| will return long option type such as "string", "boolean" ..
     method major-type { ... }
@@ -209,6 +212,10 @@ class Option::Integer does Option does DeepClone {
 
     method value {
         $!value;
+    }
+
+    method reset {
+        $!value = self!default-value;
     }
 
     method major-type {
@@ -281,6 +288,10 @@ class Option::String does Option does DeepClone {
 
     method value {
         $!value;
+    }
+
+    method reset {
+        $!value = self!default-value;
     }
 
     method major-type {
@@ -356,6 +367,10 @@ class Option::Array does Option does DeepClone {
 
     method major-type {
         "array";
+    }
+
+    method reset {
+        @!value = self!default-value;
     }
 
     method is-array() {
@@ -440,6 +455,10 @@ class Option::Hash does Option does DeepClone {
         %!value;
     }
 
+    method reset {
+        %!value = self!default-value;
+    }
+
     method major-type {
         "hash";
     }
@@ -512,6 +531,10 @@ class Option::Boolean does Option does DeepClone {
 
     method value {
         $!value;
+    }
+
+    method reset {
+        $!value = self!default-value;
     }
 
     method major-type {

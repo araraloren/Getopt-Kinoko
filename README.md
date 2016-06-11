@@ -8,9 +8,42 @@ This module can help you parsing command line arguments. You can manager multi `
 
 ## Usage
 
-具体可以参考项目中的例子。
+```Perl6
+use v6;
+use Getopt::Kinoko;
 
-See sample.
+my $optset = OptionSet.new();	# create a OptionSet
+
+$optset.insert-normal("h|help=b;v|version=b;?=b"); # insert a normal group 
+$optset.insert-multi("a|a-option=i;b|b-option=i;") # insert a multi group
+$optset.insert-radio("r|sort-by-row=b;c|sort-by-column=b;", :force); # insert a radio group
+$optset.push-option("o|other-option=s"); # push option to normal group
+$optset.push-option(
+	"hd|has-default-value=s",
+	"default-value",
+	callback => -> $value {
+		# do something
+	}
+);	# push a option has default value and has a callback
+$optset.insert-front(&front-callback);
+$optset.insert-all(&all-callback);
+
+
+my @noa = getopt($optset, :gnu-style, prefix => "get-", :generate-method); # support gnu-style
+
+# process @noa
+
+sub front-callback(Argument $arg) {
+	# do something to $arg 
+}
+
+sub all-callback(Argument @args) {
+	# process @args when parse complete
+}
+
+```
+
+更多样例请参考sample。
 
 ## Installation
 

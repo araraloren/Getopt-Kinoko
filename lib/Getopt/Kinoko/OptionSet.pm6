@@ -1,142 +1,194 @@
 
 use v6;
 
+use Getopt::Kinoko::Group;
 use Getopt::Kinoko::Option;
+use Getopt::Kinoko::NonOption;
 use Getopt::Kinoko::DeepClone;
 use Getopt::Kinoko::Exception;
 
 #| OptionSet can manager a variety of options
 class OptionSet does DeepClone {
-    has Option @!options;
-    has        @!names;
-    has        &!callback;
+	has $!front; 	# front processer which process first non-option argument
+	has @!radio;	# radio option groups
+	has @!multi;	# multi option groups
+	has $!normal;	# normal option groups
+	has $!all;	# readall prcesser which process all option after last option
+	has $!each;	# readall prcesser which process each option after last option
 
-    #| C<&optionset-str> is a option set string such as "a=a;c=i;"
-    #| options delimited with semicolon
-    #| C<&callback> is NOA process function
-    method new(Str $optionset-str = "", :&callback) {
-        self.bless(:&callback).append($optionset-str);
-    }
+	#| for deep-clone
+	submethod BUILD(
+		:$!front,
+		:@!radio,
+		:@!multi,
+		:$!normal,
+		:$!all,
+		:$!each
+	)
+	{}
 
-    submethod BUILD(:@!options, :&!callback = Block) { }
+	#| for traversal 
+	method !allgroup() {
+		($!normal, @!multi, @!radio).flat
+	}
 
-    method has(Str $name, :$long, :$short) {
-        for @!options -> $opt {
-            return True if $opt.match-name($name, :$long, :$short);
-        }
-        False
-    }
+	method has-option(Str $name, :$long, :$short) {
+		for self!allgroup -> $group {
+			return True if $group.has-option($name, :$long, :$short);
+		}
+		False;
+	}
 
-    method has-value(Str $name, :$long, :$short) {
-        for @!options -> $opt {
-            if $opt.match-name($name, :$long, :$short) {
-                return $opt.has-value;
-            }
-        }
-        False
-    }
+	method has-value(Str $name, :$long, :$short) {
+		for self!allgroup -> $group {
+			return True if $group.has-value($name, :$long, :$short);
+		}
+		False;
+	}
 
-    method get(Str $name, :$long, :$short) {
-        for @!options -> $opt {
-            return $opt if $opt.match-name($name, :$long, :$short);
-        }
-        Option;
-    }
+	method set-value(Str $name, $value, :$long, :$short) {
+		for self!allgroup -> $group {
+			return True if $group.set-value($name, $value, :$long, :$short);
+		}
+		False;
+	}
 
-    method set-value(Str $name, $value, :$long, :$short) {
-        for @!options -> $opt {
-            if $opt.match-name($name, :$long, :$short) {
-                $opt.set-value($value);
-                last;
-            }
-        }
-    }
+	method set-value-callback(Str $name, $value, :$long, :$short) {
+		for self!allgroup -> $group {
+			return True if $group.set-value-callback($name, $value, :$long, :$short);
+		}
+		False;
+	}
 
-    method set-callback(Str $name, &callback, :$long, :$short) {
-        for @!options -> $opt {
-            if $opt.match-name($name, :$long, :$short) {
-                $opt.set-callback(&callback);
-                last;
-            }
-        }
-    }
+	method set-callback(Str $name, &callback, :$long, :$short) {
+		for self!allgroup -> $group {
+			return True if $group.set-callback($name, &callback, :$long, :$short);
+		}
+		False;
+	}
 
-    #| can modify value
-    method AT-POS(::?CLASS::D: $index) is rw {
-        return @!options[$index].value;
-        #`[Proxy.new(
-            FETCH => method () {
-                if @!options[$index].value ~~ Array {
-                    return @!options[$index].value.List;
-                }
-                @!options[$index].value;
-            },
-            STORE => method ($value) {
-                @!options[$index].set-value($value);
-            }
-        );]
-    }
+	method AT-KEY(::?CLASS::D: Str \key) {
+		for self!allgroup -> $group {
+			my $opt = $group.get-option(key);
+			return $opt.value if $opt.defined;
+		}
+	}
 
-    #| can modify value
-    method AT-KEY(::?CLASS::D: $name) is rw {
-        for @!options -> $opt {
-            if $opt.match-name($name) {
-                return $opt.value;
-                #| this proxy has problem when access array
-                #`[return Proxy.new(
-                    FETCH => method () {
-                        if $opt.value ~~ Array {
-                            return $opt.value.List;
-                        }
-                        $opt.value;
-                    },
-                    STORE => method ($value) {
-                        $opt.set-value($value);
-                    }
-                );]
-            }
-        }
-    }
+	method ASSIGN-KEY(::?CLASS::D: Str \key, $value) {
+		for self!allgroup -> $group {
+			last if $group.set-value(key, $value);
+		}
+	}
 
-    method EXISTS-KEY($name) {
-        return self.has($name);
-    }
+	method EXISTS-KEY(Str \key) {
+		self.has-option(key);
+	}
 
-    method EXISTS-POS(Int $index) {
-        $index < self.Numeric();
-    }
+	method values() {
+		my $values = [];
+		for self!allgroup -> $group {
+			$values.append: $group.options();
+		}
+		$values;
+	}
 
-    method values() {
-        return @!options;
-    }
+	method keys() {
+		my $names = [];
+		for self!allgroup -> $group {
+			for $group.options() -> $opt {
+				$names.push: $opt.short-name if $opt.is-short;
+				$names.push: $opt.long-name if $opt.is-long;
+			}
+		}
+		$names;
+	}
 
-    method is-set-noa-callback() {
-        &!callback.defined;
-    }
+	method has-front() {
+		$!front.defined;
+	}
 
-    method set-noa-callback(&callback) {
-        &!callback = &callback;
-    }
+	method has-all() {
+		$!all.defined;
+	}
 
-    method process-noa($noa) {
-        &!callback($noa);
-    }
+	method has-each() {
+		$!each.defined;
+	}
 
-    method Numeric() {
-        return +@!options;
-    }
+	method has-radio() {
+		+@!radio > 0;
+	}
 
-    method check-force-value() {
-        for @!options -> $opt {
-            if $opt.is-force && !$opt.has-value {
-                X::Kinoko.new(msg => ($opt.is-short ?? $opt.short-name !! $opt.long-name) ~
-                    ": Option value is required.").throw();
-            }
-        }
-    }
+	method has-multi() {
+		+@!multi > 0;
+	}
 
-    method generate-method(Str $prefix = "") {
-        for @!options -> $opt {
+	method has-normal() {
+		$!normal.defined;
+	}
+
+	method get-front() {
+		$!front;
+	}
+
+	method get-all() {
+		$!all;
+	}
+
+	method get-each() {
+		$!each;
+	}
+
+	multi method get-multi() {
+		@!multi;
+	}
+
+	multi method get-radio() {
+		@!radio;
+	}
+
+	method get-normal() {
+		$!normal;
+	}
+
+	method insert-front(&callback) {
+		$!front = create-non-option(&callback, :front);
+		self;
+	}
+
+	method insert-radio(Str $opts, :$force = False) {
+		@!radio.push: create-group($opts, :$force, :radio);
+		self;
+	}
+
+	method insert-multi(Str $opts) {
+		@!multi.push: create-group($opts, :multi);
+		self;
+	}
+
+	method insert-normal(Str $opts) {
+		$!normal = create-group($opts, :normal);
+		self;
+	}
+
+	method insert-all(&callback) {
+		$!all = create-non-option(&callback, :all);
+		self;
+	}
+
+	method insert-each(&callback) {
+		$!each = create-non-option(&callback, :each);
+		self;
+	}
+
+	method check-force-value() {
+		for self!allgroup -> $group {
+			$group.check();
+		}
+	}
+
+	method generate-method(Str $prefix) {
+		for @(self.values()) -> $opt {
             if $opt.is-long {
                 self.^add_method($prefix ~ $opt.long-name, my method { $opt; });
                 self.^compose();
@@ -147,67 +199,93 @@ class OptionSet does DeepClone {
             }
         }
         self;
-    }
+	}
 
-    #=[ option-string;option-string;... ]
-    method append(Str $optionset-str) {
-        return self if $optionset-str.trim.chars == 0;
-        @!options.push(create-option($_)) for $optionset-str.split(';', :skip-empty);
-        self;
-    }
+	multi method push-option(Str $opt, :&callback, :$normal) {
+		$!normal.push($opt, :&callback);
+		self;
+	}
 
-    multi method push(*%option) {
-        @!options.push: create-option(|%option);
-        self;
-    }
+	multi method push-option(Str $opt, $value, :&callback, :$normal) {
+		$!normal.push($opt, $value, :&callback);
+		self;
+	}
 
-    multi method push(Str $option, :&callback) {
-        @!options.push: create-option($option, cb => &callback);
-        self;
-    }
+	method !get-option-all(Str $name, :$long, :$short) {
+		for self!allgroup -> $group {
+			my $opt = $group.get-option($name, :$long, :$short);
+			return $opt if $opt.defined;
+		}
+	}
 
-    multi method push(Str $option, $value, :&callback, ) {
-        @!options.push: create-option($option, cb => &callback, :$value);
-        self;
-    }
+	method get-option(Str $name, :$long, :$short, :$normal, :$radio, :$multi) {
+		if $radio.defined {
+			for @!radio -> $group {
+				my $opt = $group.get-option($name, :$long, :$short);
+				return $opt if $opt.defined;
+			}
+		}
+		elsif $multi.defined {
+			for @!multi -> $group {
+				my $opt = $group.get-option($name, :$long, :$short);
+				return $opt if $opt.defined;
+			}
+		}
+		elsif $normal.defined {
+			$!normal.get-option($name, :$long, :$short);
+		}
+		else {
+			self!get-option-all($name, :$long, :$short);
+		}
+	}
 
-    #=[
-        how to convenient forward parameters ?
-    ]
-    method push-str(Str :$short, Str :$long, Bool :$force, :&callback, Str :$value) {
-        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<s>);
-    }
+	method append-options(Str $opts, :$normal) {
+		$!normal.append($opts);
+		self;
+	}
 
-    method push-int(Str :$short, Str :$long, Bool :$force, :&callback, Int :$value) {
-        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<i>);
-    }
+	method usage() {
+		my Str $usage;
 
-    method push-arr(Str :$short, Str :$long, Bool :$force, :&callback, :$value) {
-        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<a>);
-    }
-
-    method push-hash(Str :$short, Str :$long, Bool :$force, :&callback, :$value) {
-        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<h>);
-    }
-
-    method push-bool(Str :$short, Str :$long, Bool :$force, :&callback, Bool :$value) {
-        self.push(sn => $short, ln => $long, :$force, cb => &callback, :$value, :mt<b>);
-    }
-
-    method usage() {
-        my Str $usage;
-
-        for @!options -> $opt {
+        for @(self.values()) -> $opt {
             $usage ~= ' [';
             $usage ~= $opt.usage;
             $usage ~= '] ';
         }
 
         $usage;
-    }
+	}
 
-    multi method deep-clone() {
-        self.bless(self.CREATE(),
-            callback => &!callback, options => DeepClone.deep-clone(@!options));
-    }
+	method perl {
+		unless self.defined {
+			return "(OptionSet)";
+		}
+		my $perl;
+
+		$perl ~= "OptionSet.new(";
+		$perl ~= "front => " ~ $!front.perl ~ ", ";
+		$perl ~= "radio => [";
+		for @!radio -> $group {
+			$perl ~= $group.perl ~ ", ";
+		}
+		$perl ~= '], multi => [';
+		for @!multi -> $group {
+			$perl ~= $group.perl ~ ", ";
+		}
+		$perl ~= '], normal => ' ~ $!normal.perl ~ ', ';
+		$perl ~= "all => " ~ $!all.perl ~ ', ';
+		$perl ~= "each => " ~ $!each.perl ~ ')';
+		$perl;
+	}
+
+	multi method deep-clone() {
+		self.bless( self.CREATE(),
+            front 	=> DeepClone.deep-clone($!front),
+			radio 	=> DeepClone.deep-clone(@!radio),
+			multi 	=> DeepClone.deep-clone(@!multi),
+			normal 	=> DeepClone.deep-clone($!normal),
+			all 	=> DeepClone.deep-clone($!all),
+			each 	=> DeepClone.deep-clone($!each)
+        );
+	}
 }

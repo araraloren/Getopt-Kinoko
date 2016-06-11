@@ -1,13 +1,15 @@
 
 use v6;
 
+use Getopt::Kinoko::Argument;
 use Getopt::Kinoko::OptionSet;
 use Getopt::Kinoko::Exception;
 
 multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Array {
-    my @noa;
+    my Argument @noa = [];
     my $opt;
     my Str $optname;
+    my $index = 0;
 
     my regex lprefix { '--' }
     my regex sprefix { '-'  }
@@ -18,8 +20,8 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
 
         given arg {
             when /^ [<lprefix> || <sprefix>] <.&optname> / {
-                if optset.has($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
-                    $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
+                if optset.has-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
+                    $opt := optset.get-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
 
                     if +@args > 0 || $opt.is-boolean {
                         $opt.set-value-callback($opt.is-boolean ?? True !! @args.shift);
@@ -33,20 +35,33 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
                 }
             }
             default {
-                if !optset.is-set-noa-callback || !optset.process-noa(arg) {
-                    @noa.push: arg;
+                @noa.push: Argument.new(value => arg, :$index);
+
+                if +@noa > 0 {
+                    if @noa.elems == 1 && optset.has-front() {
+                        optset.get-front().process(@noa[0]);
+                    }
+                    if optset.has-each {
+                        optset.get-each().process(@noa[@noa.end]);
+                    }
                 }
             }
         }
+
+        $index++;
     }
-    @noa;
+    if optset.has-all {
+        optset.get-all().process(@noa);
+    }
+    to-noa(@noa);
 }
 
 multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export returns Array {
-    my @noa;
+    my Argument @noa = [];
     my $opt;
     my $optname;
     my $optvalue;
+    my $index = 0;
 
     my regex lprefix    { '--' }
     my regex sprefix    { '-'  }
@@ -58,9 +73,10 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
 
         given arg {
             when /^ [<lprefix> || <sprefix>]  <.&optname> \= <optvalue> / {
-                if optset.has($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
-                    $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
-                    X::Kinoko.new(msg => $optname ~ ": Need a value.").throw if !$<optvalue>.defined && !$opt.is-boolean;
+                if optset.has-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
+                    $opt := optset.get-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
+                    X::Kinoko.new(msg => $optname ~ ": Need a value.").throw 
+                        if !$<optvalue>.defined && !$opt.is-boolean;
                     $opt.set-value-callback($opt.is-boolean ?? True !! $<optvalue>.Str);
                 }
                 elsif $<sprefix>.defined {
@@ -71,8 +87,8 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
                 }
             }
             when /^ [<lprefix> || <sprefix>] <.&optname> / {
-                if optset.has($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
-                    $opt := optset.get($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
+                if optset.has-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined) {
+                    $opt := optset.get-option($optname, long => $<lprefix>.defined, short => $<sprefix>.defined);
                     #$last-is-boolean = $opt.is-boolean;
                     if +@args > 0 || $opt.is-boolean {
                         $opt.set-value-callback($opt.is-boolean ?? True !! @args.shift);
@@ -88,11 +104,27 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
             default {
                 #W::Kinoko.new("Argument behind boolean option.").warn if $last-is-boolean;
                 #| argument behind boolean option also be a noa
-                if !optset.is-set-noa-callback || !optset.process-noa(arg) {
-                    @noa.push: arg;
+                @noa.push: Argument.new(value => arg, :$index);
+
+                if +@noa > 0 {
+                    if @noa.elems == 1 && optset.has-front() {
+                        optset.get-front().process(@noa[0]);
+                    }
+                    if optset.has-each {
+                        optset.get-each().process(@noa[@noa.end]);
+                    }
                 }
             }
         }
+
+        $index++;
     }
-    @noa;
+    if optset.has-all {
+        optset.get-all().process(@noa);
+    }
+    to-noa(@noa);
+}
+
+sub to-noa(@noa-argument) {
+    Array.new(@noa-argument.map: { .value });
 }
