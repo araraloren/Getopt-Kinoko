@@ -1,5 +1,8 @@
 #!/usr/bin/env perl6
 
+use v6;
+use lib "../";
+
 use Getopt::Kinoko;
 
 state $VERSION = "0.0.1";
@@ -128,15 +131,13 @@ class ErrnoFinder {
 
 
 # create optionset
-my $opts = OptionSet.new("h|help=b;v|version=b;?=b;");
+my $opts = OptionSet.new();
 
-$opts.push("l|list=b");
-$opts.push("e|errno=b");
-$opts.push("c|comment=b");
-$opts.push("n|number=b");
-$opts.push("r|regex=b");
+$opts.insert-normal("l|list=b;r|regex=b");
+$opts.insert-multi("h|help=b;v|version=b;?=b;");
+$opts.insert-radio("e|errno=b;c|comment=b;n|number=b");
 #$opts.push("f|format=s");
-$opts.push(
+$opts.push-option(
 	"p|path=s", 
 	"/usr/include",
 	callback => -> $path {
@@ -147,7 +148,7 @@ $opts.push(
 		}
 	}
 );
-$opts.push(
+$opts.push-option(
 	"i|errno-include=s",
 	"/usr/include/errno.h",
 	callback => -> $path {

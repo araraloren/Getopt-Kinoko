@@ -5,6 +5,8 @@ use lib "../";
 
 use Getopt::Kinoko;
 
+my $VERSIONS = "version 0.1.1, create by Loren.";
+
 my $is-win32 = $*DISTRO ~~ /mswin32/;
 
 class RunCompiler {
@@ -20,7 +22,9 @@ class RunCompiler {
 		$!optset := $!getopt{$!current};
 		@!incode  = DeepClone.deep-clone($!optset<e>);
 
-		help($!getopt) if $!optset<h>;
+		show-version() if $!optset<v>;
+
+		help($!getopt) if $!optset<h> || $!optset{'?'};
 
 		self.prepare-code();
 
@@ -155,7 +159,7 @@ class RunCompiler {
 		}
 
 		# generate pre-processer command
-		if $!optset.get("pp").has-value {
+		if $!optset.get-option("pp").has-value {
 			$fh.put: $*OUT.nl-out for ^2;
 			for $!optset<pp> -> $pp {
 				$fh.put: '#' ~ $pp ~ $*OUT.nl-out;
@@ -165,7 +169,7 @@ class RunCompiler {
 		# generate using for cpp
 		if $!current eq "cpp" {
 			$fh.put: $*OUT.nl-out for ^2;
-			if $!optset.get("using").has-value {
+			if $!optset.get-option("using").has-value {
 				for $!optset<u> -> $using {
 					$fh.put: 'using ' ~ $using ~ ';';
 				}
@@ -226,22 +230,21 @@ class RunCompiler {
 # MAIN
 my OptionSet $opts .= new();
 
-$opts.push("f|flags 	= a");
-$opts.push("i|include 	= a");
-$opts.push("l|link 		= a");
-$opts.push("h|help		= b");
-$opts.push("p|print 	= b");
-$opts.push(" |pp 		= a");
-$opts.push("end = s", '@@CODEEND');
-$opts.push("t = b"); # do not delete temporary .c
-$opts.push("e = a");
-$opts.push("I = a");
-$opts.push("D = a");
-$opts.push("L = a");
-$opts.push("r = b");
-$opts.push("S = b");
-$opts.push("E = b");
-$opts.push(
+$opts.insert-normal("h|help=b;v|version=b;?=b;");
+$opts.insert-radio("S = b;E = b");
+$opts.push-option("f|flags 	= a");
+$opts.push-option("i|include 	= a");
+$opts.push-option("l|link 		= a");
+$opts.push-option("p|print 	= b");
+$opts.push-option(" |pp 		= a");
+$opts.push-option("end = s", '@@CODEEND');
+$opts.push-option("t = b"); # do not delete temporary .c
+$opts.push-option("e = a");
+$opts.push-option("I = a");
+$opts.push-option("D = a");
+$opts.push-option("L = a");
+$opts.push-option("r = b");
+$opts.push-option(
 	"o|output = s",
 	$is-win32 ?? './' !! '/tmp/', # save . for win32
 	callback => -> $output is rw {
@@ -250,7 +253,7 @@ $opts.push(
 		$output = $output.IO.abspath;
 	}
 );
-$opts.push(
+$opts.push-option(
 	"m|main = s",
 	'int main(void)',
 	callback => -> $main is rw {
@@ -272,7 +275,7 @@ $opts.push(
 		$main = $main.trim;
 	},
 );
-$opts.push(
+$opts.push-option(
 	"c|compiler = s",
 	'gcc',
 	callback => -> $Compiler {
@@ -291,25 +294,25 @@ my $current		= "";
 
 #= set default value for c
 $opts-c{'include'} = <stdio.h>;
-$opts-c.set-noa-callback( -> $noa {
-	if $noa ne "c" {
+$opts-c.insert-front( -> $arg {
+	if $arg.value ne "c" || $arg.index != 0 {
 		X::Kinoko::Fail.new().throw;
 	}
 	else {
-		$current = $noa;
+		$current = $arg.value;
 	}
 });
 
 #= add using option
-$opts-cpp.push("u|using 	= a");
+$opts-cpp.push-option("u|using 	= a");
 #= set default value for cpp
 $opts-cpp{'include'} = <iostream>;
-$opts-cpp.set-noa-callback( -> $noa {
-	if $noa ne "cpp" {
+$opts-cpp.insert-front( -> $arg {
+	if $arg.value ne "cpp" || $arg.index != 0 {
 		X::Kinoko::Fail.new().throw;
 	}
 	else {
-		$current = $noa;
+		$current = $arg.value;
 	}
 });
 
@@ -332,11 +335,17 @@ multi sub run-snippet($str, $getopt) {
 	help($getopt);
 }
 
+sub show-version() {
+	say $VERSIONS;
+}
+
 sub help($getopt) {
 	my $help = "Usage:\n";
 
 	for $getopt.keys -> $key {
-		$help ~= $*PROGRAM-NAME ~ " $key " ~ $getopt{$key}.usage ~ "\n";
+		if $current eq $key || $current eq "" {
+			$help ~= $*PROGRAM-NAME ~ " $key " ~ $getopt{$key}.usage ~ "\n";
+		}
 	}
 
 	print $help;

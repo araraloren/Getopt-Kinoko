@@ -3,7 +3,6 @@ use v6;
 use Test;
 use Getopt::Kinoko::Option;
 use Getopt::Kinoko::OptionSet;
-use Getopt::Kinoko::DeepClone;
 
 {
     my Option $opt = create-option("s=s");
@@ -13,7 +12,7 @@ use Getopt::Kinoko::DeepClone;
 }
 
 {
-    my OptionSet $optset .= new("s=s;a=a;");
+    my OptionSet $optset .= new();
     my OptionSet $optset-copy = $optset.deep-clone;
 
     ok $optset.WHERE != $optset-copy.WHERE, "OptionSet deep copy ok.";
