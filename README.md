@@ -19,11 +19,11 @@ $optset.insert-multi("a|a-option=i;b|b-option=i;") # insert a multi group
 $optset.insert-radio("r|sort-by-row=b;c|sort-by-column=b;", :force); # insert a radio group
 $optset.push-option("o|other-option=s"); # push option to normal group
 $optset.push-option(
-"hd|has-default-value=s",
-"default-value",
-callback => -> $value {
-	# do something
-}
+	"hd|has-default-value=s",
+	"default-value",
+	callback => -> $value {
+		# do something
+	}
 );	# push a option has default value and has a callback
 $optset.insert-front(&front-callback);
 $optset.insert-all(&all-callback);
