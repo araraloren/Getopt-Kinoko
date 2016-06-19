@@ -21,8 +21,16 @@ role Parser does RefOptionSet {
 	}
 }
 
-class Parser::Win32 does Parser {
+class Parser::Win32System does Parser {
+	method parse(Str $data) returns Array {
 
+	}
+}
+
+class Parser::Win32Socket does Parser {
+	method parse(Str $data) returns Array {
+
+	}
 }
 
 class Parser::Linux does Parser {

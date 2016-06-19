@@ -6,22 +6,24 @@ use RefOptionSet;
 use NIException;
 
 role Downloader does RefOptionSet {
-	method get(Str $uri, $data) {
+	method get(Str $uri) {
 		X::NotImplement.new().throw();
 	}
 }
 
 #| use %URI% represent uri and %FILE% represent file
 class Downloader::Command does Downloader {
+	has $.command;
+
 	state %COMMAND = %(
-		wget 	=> 'wget %URI% -o %FILE%',
+		wget 	=> 'wget %URI% -O %FILE%',
 		curl 	=> 'curl %URI% -o %FILE%',
 	);
 
-	method get(Str $uri, $data) {
+	method get(Str $uri) {
 		my $tf = getTempFilename();
 
-		my $cmd = self!generate-command($uri, $tf, $data);
+		my $cmd = self!generate-command($uri, $tf, $!command);
 
 		try {
 			shellExec($cmd);
@@ -62,7 +64,7 @@ class Downloader::Module does Downloader {
 
 #| read from local cache
 class Downloader::Cache does Downloader {
-	method get(Str $file, $data) {
+	method get(Str $file) {
 		self!parsefile($file);
 	}
 
