@@ -2,10 +2,9 @@
 use v6;
 use Errno;
 use PubFunc;
-use RefOptionSet;
 use NIException;
 
-role Downloader does RefOptionSet {
+role Downloader {
 	method get(Str $uri) {
 		X::NotImplement.new().throw();
 	}
@@ -16,8 +15,8 @@ class Downloader::Command does Downloader {
 	has $.command;
 
 	state %COMMAND = %(
-		wget 	=> 'wget %URI% -O %FILE%',
-		curl 	=> 'curl %URI% -o %FILE%',
+		wget 	=> 'wget -q "%URI%" -O "%FILE%"',
+		curl 	=> 'curl -s "%URI%" -o "%FILE%"',
 	);
 
 	method get(Str $uri) {
@@ -26,7 +25,7 @@ class Downloader::Command does Downloader {
 		my $cmd = self!generate-command($uri, $tf, $!command);
 
 		try {
-			shellExec($cmd);
+			shellExec($cmd, :quite);
 			CATCH {
 				default {
 					note "Command '" ~ $cmd ~ "' failed.";
@@ -35,7 +34,6 @@ class Downloader::Command does Downloader {
 				}
 			}
 		}
-
 		my $str = $tf.IO.slurp;
 
 		$tf.IO.unlink;
@@ -52,8 +50,8 @@ class Downloader::Command does Downloader {
 		else {
 			$cmd = $data;
 		}
-		$cmd.subst("%URI%", $uri);
-		$cmd.subst("%FILE%",$file);
+		$cmd = $cmd.subst("%URI%", $uri);
+		$cmd = $cmd.subst("%FILE%",$file);
 		$cmd;
 	}
 }
