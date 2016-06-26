@@ -181,6 +181,12 @@ class Group::Radio does Group {
         self!clear-value;
         self.Group::push($option, $value, :&callback);
     }
+
+    multi method deep-clone() {
+        self.bless(self.CREATE(),
+            options => DeepClone.deep-clone(@!options),
+            force => DeepClone.deep-clone($!force));
+    }
 }
 
 class Group::Multi does Group {
