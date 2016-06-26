@@ -10,6 +10,11 @@ role Formater does RefOptionSet {
 	}
 }
 
+class Formater::Normal does Formater {
+	method format(@out) {
+		@out;
+	}
+}
 
 class Formater::Table does Formater {
 
