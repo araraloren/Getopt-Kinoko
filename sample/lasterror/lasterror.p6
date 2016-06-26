@@ -4,68 +4,150 @@ use v6;
 use lib './private';
 
 use Errno;
+use Parser;
 use PubFunc;
 use Downloader;
+use ErrnoFinder;
+use LocalConfig;
 use Getopt::Kinoko;
+use Getopt::Kinoko::Exception;
 
-state $SOCKET-ERROR-uri = 'https://msdn.microsoft.com/en-us/library/windows/desktop/ms740668%28v=vs.85%29.aspx';
-state $SYSTEM-ERROR-uri = 'https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx';
-state $INCLUDE-PATH		= '/usr/include';
-state $ERRNO-INCLUDE	= '/usr/include/errno.h';
+# ~~~~~
+my $update;
+my $list;
+my $find;
+my $local-config = LocalConfig.new();
 
 # initialize OptionSet
 my $optset = OptionSet.new();
 
-$optset.insert-normal("h|help=b;v|version=b;r|regex=b;start=i;end=i;");
-$optset.insert-multi("socket-error-uri=s;system-error-uri=s;include-path=s;errno-head=s");
-$optset.insert-radio("system=b;socket=b;");
+# common
+$optset.insert-normal("h|help=b;v|version=b;");
+$optset.insert-radio("use-wget=b;use-curl=b;use-lwp=b;command=s", :force);
 $optset.insert-radio("c-errno=b;win32-lasterror=b;");
-$optset.insert-radio("e|errno=b;n|number=b;c|comment=b;", :force);
-$optset.insert-radio("use-wget=b;use-curl=b;use-lwp=b;command=s");
-$optset.insert-all(&main);
+$optset.insert-multi("socket-error-uri=s;system-error-uri=s;include-directory=s;errno-include=s");
 
-# set default uri
-$optset.set-value("start", 0);
-$optset.set-value("end", 0); # start and end only use for *list*
-$optset.set-value("socket-error-uri", $SOCKET-ERROR-uri);
-$optset.set-value("system-error-uri", $SYSTEM-ERROR-uri);
-$optset.set-value("include-path", $INCLUDE-PATH);
-$optset.set-value("errno-head", $ERRNO-INCLUDE);
+# update
+$update = $optset.deep-clone;
+$update.insert-front(get-front("update"));
+
+# list and find common
+$optset.insert-radio("system=b;socket=b;");
+$optset.insert-radio("e|errno=b;n|number=b;c|comment=b;");
+
+$list = $optset.deep-clone;
+
+# list
+$list.insert-front(get-front("list"));
+$list.set-value("start", 0);
+$list.set-value("end", 0); # start and end only use for *list*
+$list.append-options("start=i;end=i");
+
+# find
+$find = $optset;
+
+# find
+$find.append-options("r|regex=b");
+$find.insert-front(get-front("find"));
 
 # call getopt
-getopt($optset, :gnu-style);
+my $getopt = Getopt.new(:gun-style);
+
+$getopt.push("update", $update);
+$getopt.push("list", $list);
+$getopt.push("find", $find);
+main($getopt.parse()); # different way from function interface [getopt]
 
 # MAIN
-sub main(Argument @args) {
+sub main(@args) {
 # @args => [operator { find | list | update }, ... args ...]
 # [... args ...] => [hexadecimal decimal string]
-	my $operator = +@args > 0 ?? @args.shift !! "";
+	my $operator = $getopt.current();
 
-	# prepare data
-	my @caches = get-data($optset);
+	if $operator eq "" || $operator !~~ /find||list||update/ {
+		print-help($getopt, "");
+		exit 1;
+	}
 
-	say @caches;
+	my $optset = $getopt{$getopt.current()};
+
+	if $optset<version> {
+		print-version();
+		exit(0) unless $optset<help>;
+	}
+
+	if $optset<help> {
+		print-help($getopt, $operator);
+		exit 0;
+	}
+
+	synchronization-config($optset, $local-config);
 
 	# executable operator
 	given $operator {
-		when /find/ {
+		when /find|list/ {
+			my @data = get-data($optset);
 
-		}
-		when /list/ {
-
+			say @data;
 		}
 		when /update/ {
-
-		}
-		default {
-			if $optset{'help'} {
-				say "Usage:";
-				say $PROGRAM-NAME ~ $optset.usage();
-				exit 0;
-			}
+			update-data($optset);
 		}
 	}
 }
+
+# front callback
+sub get-front(Str $name) {
+	sub check(Argument $arg) {
+		if ~$arg.value ne $name {
+			X::Kinoko::Fail.new().throw();
+		}
+ 	}
+	return &check;
+}
+
+# get downloader
+sub get-downloader(OptionSet \optset) {
+	if optset{'use-wget'} {
+		return Downloader::Command.new(command => 'wget');
+	}
+	elsif optset{'use-curl'} {
+		return Downloader::Command.new(command => 'curl');
+	}
+	elsif optset{'use-lwp'} {
+		return Downloader::Module.new();
+	}
+	elsif optset.has-value('command') {
+		return Downloader::Command.new(command => optset{'command'});
+	}
+	else {
+		return Downloader.new();
+	}
+ }
+
+ # synchronization config
+ sub synchronization-config(OptionSet \optset, LocalConfig \local-config) {
+	 my @table = [
+		 'system-error-uri',
+		 'socket-error-uri',
+		 'errno-include',
+		 'include-directory',
+	 ];
+
+	 local-config.read-config();
+
+	 for @table -> $key {
+		 if optset.has-value($key) {
+			 local-config.hash-way-operator($key, optset{$key});
+		 }
+		 else {
+			 optset.set-value($key, local-config.hash-way-operator($key));
+		 }
+	 }
+
+	 # write back
+	 local-config.update-config();
+ }
 
 # prepare data
 sub get-data(OptionSet \optset) {
@@ -88,6 +170,27 @@ sub get-data(OptionSet \optset) {
 	return @ret;
 }
 
+sub update-data(OptionSet \optset) {
+	my ($errno, $win32) = (optset{'c-errno'}, optset{'win32-lasterror'});
+
+	if !$errno && !$win32 {
+		$errno = $win32 = True;
+	}
+
+	if $errno {
+		say "update errno data";
+		update-errno-data(optset);
+		say "update errno data ok";
+	}
+
+	if $win32 {
+		#my ($need-system, $need-socket) = (optset{'system'}, optset{'socket'});
+		say "update win32 data";
+		update-win32-error-data(optset, :system, :socket);
+		say "update win32 data ok";
+	}
+}
+
 # prepare errno data
 sub get-errno-data(OptionSet \optset) {
 	my $epath = errnoCachePath();
@@ -97,7 +200,7 @@ sub get-errno-data(OptionSet \optset) {
 	}
 
 	if $epath.IO ~~ :r {
-		return Parser.parse(Downloader::Cache.get($epath));	
+		return Parser.parse(Downloader::Cache.get($epath));
 	}
 	else {
 		note "Can not read {$epath.path}";
@@ -106,11 +209,22 @@ sub get-errno-data(OptionSet \optset) {
 }
 
 sub update-errno-data(OptionSet \optset) {
-	my $ef = ErrnoFinder.new(path => optset{'include-path'});
+	my $channel = Channel.new();
 
-	$ef.find(optset{'errno-head'});
+	start {
+		$channel.send("0");
+		my $ef = ErrnoFinder.new(path => optset{'include-directory'});
 
-	writeCache(errnoCachePath(), $ef.result());	
+		$channel.send("5");
+		$ef.find(optset{'errno-include'});
+
+		$channel.send("50");
+		writeCache(errnoCachePath(), $ef.result());
+		$channel.send("100");
+		$channel.send("end");
+	}
+	printProgress("\t", $channel, "end");
+	$channel.close();
 }
 
 # prepare win32 error data
@@ -127,72 +241,94 @@ sub get-win32-error-data(OptionSet \optset) {
 		my $spath = win32ErrorSystemCachePath();
 
 		if $spath.IO !~~ :e {
+			say "update win32 system data";
 			update-win32-error-data(optset, :system);
+			say "update win32 system data ok";
 		}
 
 		if $spath.IO ~~ :r {
-			@rets.append: Parser.parse(Downloader::Cache.get($spath));	
+			@rets.append: Parser.parse(Downloader::Cache.get($spath));
 		}
 	}
 	if $need-socket {
 		my $spath = win32ErrorSocketCachePath();
 
 		if $spath.IO !~~ :e {
+			say "update win32 socket data";
 			update-win32-error-data(optset, :socket);
+			say "update win32 socket data ok";
 		}
 
 		if $spath.IO ~~ :r {
-			@rets.append: Parser.parse(Downloader::Cache.get($spath));	
+			@rets.append: Parser.parse(Downloader::Cache.get($spath));
 		}
 	}
 
 	return @rets;
 }
 
-sub get-downloader(OptionSet \optset) {
-	if optset{'use-wget'} {
-		return Downloader::Command.new(command => 'wget');
-	}
-	elsif optset{'use-curl'} {
-		return Downloader::Command.new(command => 'curl');
-	}
-	elseif optset{'use-lwp'} {
-		return Downloader::Module.new();
-	}
-	elsif optset.has-value('command') {
-		return Downloader::Command.new(command => optset{'command'});
-	}
-	else {
-		return Downloader.new();
-	}
- }
-
 sub update-win32-error-data(OptionSet \optset, :$system, :$socket) {
 	if ?$system {
-		my @ret = Parser::Win32System.parse(get-downloader().get(optset{'system-error-uri'}));
+		my $channel = Channel.new();
+		my $progress = 0;
+		my $downloader = get-downloader(optset);
 
-		writeCache(win32ErrorSystemCachePath(), @ret);
+		start {
+			$channel.send("0");
+			my @ret = Parser::Win32SystemUrl.parse($downloader.get(optset{'system-error-uri'}));
+			my @ps = [];
+
+			$progress = 5;
+			$channel.send($progress);
+			cleanCache(win32ErrorSystemCachePath());
+
+			for @ret -> $mslink {
+				@ps.push: start {
+					writeCache(
+						win32ErrorSystemCachePath(),
+						Parser::Win32System.parse($downloader.get($mslink))
+					);
+					$progress += (95 / +@ret).floor;
+					$channel.send($progress);
+				};
+			}
+			await Promise.allof(@ps);
+			$channel.send("100");
+			$channel.send("end");
+		}
+		printProgress("\t", $channel, "end");
+		$channel.close();
 	}
-	if $?socket {
-		my @ret = Parser::Win32Socket.parse(get-downloader().get(optset{'socket-error-uri'}));
+	if ?$socket {
+		my $channel = Channel.new();
 
-		writeCache(win32ErrorSocketCachePath(), @ret);
+		start {
+			$channel.send("5");
+			my @ret = Parser::Win32Socket.parse(get-downloader(optset).get(optset{'socket-error-uri'}));
+
+			$channel.send("50");
+			writeCache(win32ErrorSocketCachePath(), @ret);
+			$channel.send("100");
+			$channel.send("end");
+		}
+		printProgress("\t", $channel, "end");
+		$channel.close();
 	}
 }
 
 # help function
-sub find-help() {
+sub print-help(Getopt $getopt, $current) {
+	my $help = "Usage:\n";
 
+	for $getopt.keys -> $key {
+		if $current eq $key || $current eq "" {
+			$help ~= $*PROGRAM-NAME ~ " $key " ~ $getopt{$key}.usage ~ "\n";
+		}
+	}
+
+	print $help;
 }
 
-sub list-help() {
-
-}
-
-sub update-help() {
-
-}
-
-sub version() {
-
+sub print-version() {
+	say "version 0.1.1, create by Loren.";
 }
