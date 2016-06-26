@@ -71,11 +71,11 @@ class Downloader::Cache does Downloader {
 
 		for $file.IO.lines -> $line {
 			if $line ~~ /^errno\:(.*)\, number\:(.*)\, comment\:(.*)/ {
-				my Errno $errno;
-				$errno.errno = ~$0;
-				$errno.number = ~$1;
-				$errno.comment = ~$2;
-				@errnos.push: $errno;
+				@errnos.push: Errno.new(
+					errno	=> ~$0,
+					number	=> ~$1,
+					comment	=> ~$2
+				);
 			}
 		}
 

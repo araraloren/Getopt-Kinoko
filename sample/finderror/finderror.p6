@@ -23,13 +23,13 @@ my $optset = OptionSet.new();
 
 # common
 $optset.insert-normal("h|help=b;v|version=b;");
-$optset.insert-radio("use-wget=b;use-curl=b;use-lwp=b;command=s", :force);
 $optset.insert-radio("c-errno=b;win32-lasterror=b;");
 $optset.insert-multi("socket-error-uri=s;system-error-uri=s;include-directory=s;errno-include=s");
 
 # update
 $update = $optset.deep-clone;
 $update.insert-front(get-front("update"));
+$update.insert-radio("use-wget=b;use-curl=b;use-lwp=b;command=s", :force);
 
 # list and find common
 $optset.insert-radio("system=b;socket=b;");
@@ -88,7 +88,20 @@ sub main(@args) {
 		when /find|list/ {
 			my @data = get-data($optset);
 
-			say @data;
+			if $operator eq "find" {
+				say Formater::Normal(
+					-> \optset, @data {
+
+					}($optset, @data)
+				);
+			}
+			else {
+				say Formater::Normal(
+					-> \optset, @data {
+
+					}($optset, @data)
+				);
+			}
 		}
 		when /update/ {
 			update-data($optset);
@@ -195,15 +208,11 @@ sub update-data(OptionSet \optset) {
 sub get-errno-data(OptionSet \optset) {
 	my $epath = errnoCachePath();
 
-	if $epath.IO !~~ :e {
-		update-errno-data(optset);
-	}
-
 	if $epath.IO ~~ :r {
 		return Parser.parse(Downloader::Cache.get($epath));
 	}
 	else {
-		note "Can not read {$epath.path}";
+		note "Please update data first.";
 		exit -1;
 	}
 }
@@ -240,27 +249,23 @@ sub get-win32-error-data(OptionSet \optset) {
 	if $need-system {
 		my $spath = win32ErrorSystemCachePath();
 
-		if $spath.IO !~~ :e {
-			say "update win32 system data";
-			update-win32-error-data(optset, :system);
-			say "update win32 system data ok";
-		}
-
 		if $spath.IO ~~ :r {
 			@rets.append: Parser.parse(Downloader::Cache.get($spath));
+		}
+		else {
+			note "Please update data first.";
+			exit -1;
 		}
 	}
 	if $need-socket {
 		my $spath = win32ErrorSocketCachePath();
 
-		if $spath.IO !~~ :e {
-			say "update win32 socket data";
-			update-win32-error-data(optset, :socket);
-			say "update win32 socket data ok";
-		}
-
 		if $spath.IO ~~ :r {
 			@rets.append: Parser.parse(Downloader::Cache.get($spath));
+		}
+		else {
+			note "Please update data first.";
+			exit -1;
 		}
 	}
 
