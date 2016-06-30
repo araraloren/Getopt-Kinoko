@@ -6,6 +6,7 @@ use lib './private';
 use Errno;
 use Parser;
 use PubFunc;
+use Formater;
 use Downloader;
 use ErrnoFinder;
 use LocalConfig;
@@ -23,7 +24,7 @@ my $optset = OptionSet.new();
 
 # common
 $optset.insert-normal("h|help=b;v|version=b;");
-$optset.insert-radio("c-errno=b;win32-lasterror=b;");
+$optset.insert-radio("c|c-errno=b;l|win32-lasterror=b;");
 $optset.insert-multi("socket-error-uri=s;system-error-uri=s;include-directory=s;errno-include=s");
 
 # update
@@ -33,25 +34,24 @@ $update.insert-radio("use-wget=b;use-curl=b;use-lwp=b;command=s", :force);
 
 # list and find common
 $optset.insert-radio("system=b;socket=b;");
-$optset.insert-radio("e|errno=b;n|number=b;c|comment=b;");
+$optset.insert-multi("e|errno=b;n|number=b;c|comment=b;show-all=b");
 
 $list = $optset.deep-clone;
 
 # list
 $list.insert-front(get-front("list"));
+$list.append-options("start=i;end=i");
 $list.set-value("start", 0);
 $list.set-value("end", 0); # start and end only use for *list*
-$list.append-options("start=i;end=i");
-
 # find
 $find = $optset;
 
 # find
-$find.append-options("r|regex=b");
+$find.append-options("r|regex=b;w|whole-word=b");
 $find.insert-front(get-front("find"));
 
 # call getopt
-my $getopt = Getopt.new(:gun-style);
+my $getopt = Getopt.new(:gnu-style);
 
 $getopt.push("update", $update);
 $getopt.push("list", $list);
@@ -81,7 +81,12 @@ sub main(@args) {
 		exit 0;
 	}
 
+	# ignore first argument
+	@args.shift;
+
 	synchronization-config($optset, $local-config);
+
+	my $formater = Formater::Normal.new(optset => $optset);
 
 	# executable operator
 	given $operator {
@@ -89,18 +94,61 @@ sub main(@args) {
 			my @data = get-data($optset);
 
 			if $operator eq "find" {
-				say Formater::Normal(
-					-> \optset, @data {
+				if +@args == 0 {
+					fail("Find operator need condition.");
+				}
+				say @args.WHAT;
+				-> {
+					my Str @columns = [];
 
-					}($optset, @data)
-				);
+					@columns.push: "errno" if $optset<errno>;
+					@columns.push: "number" if $optset<number>;
+					@columns.push: "comment" if $optset<comment>;
+
+					if +@columns == 0 {
+						@columns.append: ["errno", "number", "comment"];
+					}
+
+					if $optset{'regex'} {
+						for @data -> $errno {
+							if matchRegex($errno, @columns, @args) {
+								say $formater.format($errno);
+							}
+						}						
+					}
+					elsif $optset{'whole-word'} {
+						for @data -> $errno {
+							# argument may be a number
+							if $optset{'number'} {
+								if matchNumber($errno, @args) {
+									say $formater.format($errno);
+									next;
+								}
+							}
+							if matchWholeWord($errno, @columns, @args) {
+								say $formater.format($errno);
+							}
+						}	
+					}
+					else {
+						for @data -> $errno {
+							if matchFindpattern($errno, @columns, @args) {
+								say $formater.format($errno);
+							}
+						}	
+					}
+				}();
 			}
 			else {
-				say Formater::Normal(
-					-> \optset, @data {
+				-> {
+					my ($s, $e) = ($optset{'start'}, $optset{'end'});
 
-					}($optset, @data)
-				);
+					$s = 1 if $s == 0;
+					$e = ($e == 0) ?? @data.end !! ($e > @data.end ?? @data.end !! $e);
+					loop (my $i = $s;$i <= $e;$i++) {
+						say $formater.format(@data[$i]);
+					}
+				}();
 			}
 		}
 		when /update/ {
@@ -108,6 +156,61 @@ sub main(@args) {
 		}
 	}
 }
+
+# match function
+
+sub matchRegex(Errno $errno, @columns, @patterns) {
+	for @columns -> $column {
+		my \string := $errno."$column"();
+
+		for @patterns -> $pattern {
+			if string ~~ /{$pattern}/ {
+				return True;
+			}
+		}
+	}
+	return False;
+}
+
+sub matchNumber(Errno $errno, @patterns) {
+	for @patterns -> $pattern {
+		try {
+			my Int $value = $pattern.Int.base(10);
+
+			if $value == $errno.number {
+				return True;
+			}
+		}
+	}
+	return False;
+}
+
+sub matchWholeWord(Errno $errno, @columns, @patterns) {
+	for @columns -> $column {
+		my \string := $errno."$column"();
+
+		for @patterns -> $pattern {
+			if string eq $pattern {
+				return True;
+			}
+		}
+	}
+	return False;
+}
+
+sub matchFindpattern(Errno $errno, @columns, @patterns) {
+	for @columns -> $column {
+		my \string := $errno."$column"();
+
+		for @patterns -> $pattern {
+			if string.index($pattern) {
+				return True;
+			}
+		}
+	}
+	return False;
+}
+
 
 # front callback
 sub get-front(Str $name) {
