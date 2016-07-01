@@ -24,7 +24,7 @@ my $optset = OptionSet.new();
 
 # common
 $optset.insert-normal("h|help=b;v|version=b;");
-$optset.insert-radio("c|c-errno=b;l|win32-lasterror=b;");
+$optset.insert-radio("s|stdc-errno=b;l|win32-lasterror=b;");
 $optset.insert-multi("socket-error-uri=s;system-error-uri=s;include-directory=s;errno-include=s");
 
 # update
