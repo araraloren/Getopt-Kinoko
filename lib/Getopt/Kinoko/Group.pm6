@@ -101,8 +101,7 @@ role Group does DeepClone {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(),
-            options => DeepClone.deep-clone(@!options));
+        self.bless(options => DeepClone.deep-clone(@!options));
     }
 
     method !base-perl() {
@@ -183,9 +182,10 @@ class Group::Radio does Group {
     }
 
     multi method deep-clone() {
-        self.bless(self.CREATE(),
+        self.bless(
             options => DeepClone.deep-clone(@!options),
-            force => DeepClone.deep-clone($!force));
+            force => DeepClone.deep-clone($!force)
+        );
     }
 }
 
