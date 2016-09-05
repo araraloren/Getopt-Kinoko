@@ -1,0 +1,75 @@
+=begin pod
+
+=head1 NAME
+
+Getopt::Kinoko - A command line parsing module which written in Perl6
+
+=head1 VERSION
+
+Version 0.1.1
+
+=head1 SYNOPSIS
+
+=begin code
+
+	use Getopt::Kinoko;
+	
+	my OptionSet $opts .= new();
+	
+	# --file , --read
+	$opts.insert-normal("|file=s;|read=b");
+	# -h | --help , -v | --version , -?
+	$opts.insert-multi("h|help=b;v|version=b;?=b");
+	# --quiet or --debug 
+	$opts.insert-radio("quiet=b;debug=b");
+	# push option to normal group
+	$opts.push-option(
+		"o|output=s",
+		"",	# default value
+		callback => -> $outputs {
+			die "Invalid output file"
+				if $outputs.IO !~~ :f;
+		}
+	);
+	# insert a main function
+	$opts.insert-all(&main);
+	
+	getopt($opts);
+	
+	say say $*PROGRAM-NAME ~ $opts.usage if $opts<h>;
+	
+	sub main(Argument @arguments) {
+		say "Arguments:";
+		for @arguments -> $arg {
+			say "argument		=> index:{$arg.index} value:{$arg.value}";
+		}
+		say "Options:";
+		for < file read help version ? quiet debug output > -> $opt-name {
+			say "option			=> name:{$opt-name} value:'{$opts{$opt-name}.Str}'"
+				if $opts.has-value($opt-name);
+		}
+	}
+
+=end code
+
+=head1 DESCRIPTION
+
+B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single L<OptionSet> and OO style interface which can handle multi L<OptionSet at> same time(just as overload the MAIN routine).
+
+L<OptionSet> is a class used to describe a set of L<Option>, It support group the Options together with L<Group::Normal> L<Group::Radio> L<Group::Multi> L<Group>, and you can also set a L<NonOption::Front> L<NonOption::All> L<NonOption> handle user input non-option parameters.
+
+The option of OptionSet can be one kind of L<Option::String> L<Option::Integer> L<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+
+=head1 COPYRIGHT
+
+Copyright 2015 - 2016 loren <blackcatoverwall@gmail.com>
+
+=head LICENSE
+
+You can redistribute it or use, copy, modify it under MIT License.
+
+=
+	
+	
+	
+	
