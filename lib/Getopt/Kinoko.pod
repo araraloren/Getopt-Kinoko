@@ -54,11 +54,7 @@ Version 0.1.1
 
 =head1 DESCRIPTION
 
-B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single L<OptionSet> and OO style interface which can handle multi L<OptionSet at> same time(just as overload the MAIN routine).
-
-L<OptionSet> is a class used to describe a set of L<Option>, It support group the Options together with L<Group::Normal> L<Group::Radio> L<Group::Multi> L<Group>, and you can also set a L<NonOption::Front> L<NonOption::All> L<NonOption> handle user input non-option parameters.
-
-The option of OptionSet can be one kind of L<Option::String> L<Option::Integer> L<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single L<OptionSet> and OO style interface which can handle multi L<OptionSet at> same time(just as overload the MAIN routine). L<OptionSet> is a class used to describe a set of L<Option>, It support group the Options together with L<Group::Normal> L<Group::Radio> L<Group::Multi> L<Group>, and you can also set a L<NonOption::Front> L<NonOption::All> L<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of L<Option::String> L<Option::Integer> L<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
 
 =head1 COPYRIGHT
 
