@@ -2,11 +2,19 @@
 
 =head1 NAME
 
+=begin head2
+
 Getopt::Kinoko - A command line parsing module which written in Perl6
+
+=end head2
 
 =head1 VERSION
 
+=begin head2
+
 Version 0.1.1
+
+=end head2
 
 =head1 SYNOPSIS
 
@@ -54,17 +62,106 @@ Version 0.1.1
 
 =head1 DESCRIPTION
 
-B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single L<OptionSet> and OO style interface which can handle multi L<OptionSet at> same time(just as overload the MAIN routine). L<OptionSet> is a class used to describe a set of L<Option>, It support group the Options together with L<Group::Normal> L<Group::Radio> L<Group::Multi> L<Group>, and you can also set a L<NonOption::Front> L<NonOption::All> L<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of L<Option::String> L<Option::Integer> L<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+=begin item
+
+B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single C<OptionSet> and OO style interface which can handle multi C<OptionSet at> same time(just as overload the MAIN routine). C<OptionSet> is a class used to describe a set of C<Option>, It support group the Options together with C<Group::Normal> C<Group::Radio> C<Group::Multi> C<Group>, and you can also set a C<NonOption::Front> C<NonOption::All> C<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of C<Option::String> C<Option::Integer> C<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+
+=end item
 
 =head1 COPYRIGHT
 
+=begin head2
+
 Copyright 2015 - 2016 loren <blackcatoverwall@gmail.com>
 
-=head LICENSE
+=end head2
+
+=head1 LICENSE
+
+=begin head2
 
 You can redistribute it or use, copy, modify it under MIT License.
 
-=
+=end head2
+
+=head1 USAGE
+
+=head2 Getopt
+
+=head3 DESCRIPTION
+
+  =begin code
+
+  class Getopt does Associative { ... };
+  =end code
+
+  C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>. C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
+
+=head3 method new(:$generate-method, :$gnu-style)
+
+=begin head3
+
+Create a C<Getopt> manager OptionSet. Set I<generate-method> flag if you want generate option get method for C<OptionSet>. If you want your program support B<gnu-style> please use I<gnu-style> flag.
+
+=end head3
+
+=head3 multi method push(Str $name, OptionSet $optset) returns Getopt
+
+=begin head3
+
+Add the C<$optset> to C<Getopt>, and set it's name as C<$name>.
+
+=end head3
+
+=head3 multi method push(Str $name, Str $optset-string, &callback = Block) returns Getopt;
+
+=begin head3
+
+![deprecated]
+
+=end head3
+
+=head3 method current() returns Str
+
+=begin head3
+
+Get current matched C<OptionSet>'s name.
+
+=end head3
+
+=head3 method parse(@!args = @*ARGS, Str :$prefix="", :&parser = &kinoko-parse) returns Array
+
+=begin head3
+
+Use C<&parser> parsing command line arguments C<@!args>, use C<$prefix> as method prefix if C<$generate-method> flag is True. The method return all I<Non-Option-Argument>.
+
+=end head3
+
+=head3 multi method usage(Str $name)
+
+=begin head3
+
+Generate a simple usage message without C<$*PROGRAM-NAME> for OptionSet C<Getopt{$name}>.
+
+=end head3
+
+=head3 multi method usage()
+
+=begin head3
+
+Generate a full usage message with C<$*PROGRAM-NAME> for all OptionSet.
+
+=end head3
+
+=head3 other
+
+=begin head3
+
+AT-KEY EXISTS-KEY keys values kv
+
+=end head3
+
+=end pod
 	
 	
 	
