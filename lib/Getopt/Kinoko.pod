@@ -21,14 +21,14 @@ Version 0.1.1
 =begin code
 
 	use Getopt::Kinoko;
-	
+
 	my OptionSet $opts .= new();
-	
+
 	# --file , --read
 	$opts.insert-normal("|file=s;|read=b");
 	# -h | --help , -v | --version , -?
 	$opts.insert-multi("h|help=b;v|version=b;?=b");
-	# --quiet or --debug 
+	# --quiet or --debug
 	$opts.insert-radio("quiet=b;debug=b");
 	# push option to normal group
 	$opts.push-option(
@@ -41,11 +41,11 @@ Version 0.1.1
 	);
 	# insert a main function
 	$opts.insert-all(&main);
-	
+
 	getopt($opts);
-	
+
 	say say $*PROGRAM-NAME ~ $opts.usage if $opts<h>;
-	
+
 	sub main(Argument @arguments) {
 		say "Arguments:";
 		for @arguments -> $arg {
@@ -94,9 +94,9 @@ You can redistribute it or use, copy, modify it under MIT License.
 
   class Getopt does Associative { ... };
   =end code
-
+  =begin item
   C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>. C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
-
+  =end item
 =head3 method new(:$generate-method, :$gnu-style)
 
 =begin head3
@@ -161,8 +161,42 @@ AT-KEY EXISTS-KEY keys values kv
 
 =end head3
 
+=head2 OptionSet
+
+=head3 DESCRIPTION
+
+=begin code
+
+class OptionSet does DeepClone { ... };
+=end code
+
+=begin item
+
+C<OptionSet> manager multi C<Option>, it provide many interface handle C<Option> add or access.
+
+=end item
+=head3 method insert-normal(Str $opts) returns OptionSet
+
+=begin head3
+
+Insert a normal group into C<OptionSet>. Normal group is main group of the C<OptionSet>, it has many Option can set by user at the same time.
+
+=end head3
+
+=head3 method insert-multi(Str $opts) returns OptionSet
+
+=begin head3
+
+Insert a multi group into C<OptionSet>. Multi group has many C<Option> can set by user at the same time.
+
+=end head3
+
+=head3 method insert-radio(Str $opts, :$force = False) returns OptionSet
+
+=begin head3
+
+Insert a radio group into C<OptionSet>. Radio group hold many C<Option> but can set only one at the same time. This group must be have value when C<:$force> is True.
+
+=end head3
+
 =end pod
-	
-	
-	
-	
