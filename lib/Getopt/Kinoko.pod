@@ -2,19 +2,11 @@
 
 =head1 NAME
 
-=begin head2
-
-Getopt::Kinoko - A command line parsing module which written in Perl6
-
-=end head2
+	Getopt::Kinoko - A command line parsing module which written in Perl6
 
 =head1 VERSION
 
-=begin head2
-
-Version 0.1.1
-
-=end head2
+	Version 0.1.1
 
 =head1 SYNOPSIS
 
@@ -62,141 +54,162 @@ Version 0.1.1
 
 =head1 DESCRIPTION
 
-=begin item
-
-B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single C<OptionSet> and OO style interface which can handle multi C<OptionSet at> same time(just as overload the MAIN routine). C<OptionSet> is a class used to describe a set of C<Option>, It support group the Options together with C<Group::Normal> C<Group::Radio> C<Group::Multi> C<Group>, and you can also set a C<NonOption::Front> C<NonOption::All> C<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of C<Option::String> C<Option::Integer> C<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
-
-=end item
+=begin para
+	B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single C<OptionSet> and OO style interface which can handle multi C<OptionSet at> same time(just as overload the MAIN routine). C<OptionSet> is a class used to describe a set of C<Option>, It support group the Options together with C<Group::Normal> C<Group::Radio> C<Group::Multi> C<Group>, and you can also set a C<NonOption::Front> C<NonOption::All> C<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of C<Option::String> C<Option::Integer> C<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+=end para
 
 =head1 COPYRIGHT
 
-=begin head2
-
-Copyright 2015 - 2016 loren <blackcatoverwall@gmail.com>
-
-=end head2
+	Copyright 2015 - 2016 loren <blackcatoverwall@gmail.com>
 
 =head1 LICENSE
 
-=begin head2
-
-You can redistribute it or use, copy, modify it under MIT License.
-
-=end head2
+	You can redistribute it or use, copy, modify it under MIT License.
 
 =head1 USAGE
 
 =head2 Getopt
 
-=head3 DESCRIPTION
+=item1 class Getopt does Associative { ... };
+=begin para
+	C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>. C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
+=end para
 
-  =begin code
+=item1 method new(:$generate-method, :$gnu-style)
+=begin para
+	Create a C<Getopt> manager OptionSet. Set I<generate-method> flag if you want generate option get method for C<OptionSet>. If you want your program support B<gnu-style> please use I<gnu-style> flag.
+=end para
 
-  class Getopt does Associative { ... };
-  =end code
-  =begin item
-  C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>. C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
-  =end item
-=head3 method new(:$generate-method, :$gnu-style)
+=item1 multi method push(Str $name, OptionSet $optset) returns Getopt
+=begin para
+	Add the C<$optset> to C<Getopt>, and set it's name as C<$name>.
+=end para
 
-=begin head3
+=item1 multi method push(Str $name, Str $optset-string, &callback = Block) returns Getopt;
+=begin para
+	![deprecated]
+=end para
 
-Create a C<Getopt> manager OptionSet. Set I<generate-method> flag if you want generate option get method for C<OptionSet>. If you want your program support B<gnu-style> please use I<gnu-style> flag.
+=item1 method current() returns Str
+=begin para
+	Get current matched C<OptionSet>'s name.
+=end para
 
-=end head3
+=item1 method parse(@!args = @*ARGS, Str :$prefix="", :&parser = &kinoko-parse) returns Array
+=begin para
+	Use C<&parser> parsing command line arguments C<@!args>, use C<$prefix> as method prefix if C<$generate-method> flag is True. The method return all I<Non-Option-Argument>.
+=end para
 
-=head3 multi method push(Str $name, OptionSet $optset) returns Getopt
+=item1 multi method usage(Str $name)
+=begin para
+	Generate a simple usage message without C<$*PROGRAM-NAME> for OptionSet C<Getopt{$name}>.
+=end para
 
-=begin head3
+=item1 multi method usage()
+=begin para
+	Generate a full usage message with C<$*PROGRAM-NAME> for all OptionSet.
+=end para
 
-Add the C<$optset> to C<Getopt>, and set it's name as C<$name>.
-
-=end head3
-
-=head3 multi method push(Str $name, Str $optset-string, &callback = Block) returns Getopt;
-
-=begin head3
-
-![deprecated]
-
-=end head3
-
-=head3 method current() returns Str
-
-=begin head3
-
-Get current matched C<OptionSet>'s name.
-
-=end head3
-
-=head3 method parse(@!args = @*ARGS, Str :$prefix="", :&parser = &kinoko-parse) returns Array
-
-=begin head3
-
-Use C<&parser> parsing command line arguments C<@!args>, use C<$prefix> as method prefix if C<$generate-method> flag is True. The method return all I<Non-Option-Argument>.
-
-=end head3
-
-=head3 multi method usage(Str $name)
-
-=begin head3
-
-Generate a simple usage message without C<$*PROGRAM-NAME> for OptionSet C<Getopt{$name}>.
-
-=end head3
-
-=head3 multi method usage()
-
-=begin head3
-
-Generate a full usage message with C<$*PROGRAM-NAME> for all OptionSet.
-
-=end head3
-
-=head3 other
-
-=begin head3
-
-AT-KEY EXISTS-KEY keys values kv
-
-=end head3
+=item1  other
+=begin para
+	AT-KEY EXISTS-KEY keys values kv
+=end para
 
 =head2 OptionSet
 
-=head3 DESCRIPTION
+=item1 class OptionSet does DeepClone { ... };
+=begin para
+	C<OptionSet> manager multi C<Option>, it provide many interface handle C<Option> add or access.
+=end para
 
-=begin code
+=item1 method insert-normal(Str $opts) returns OptionSet
+=begin para
+	Insert a normal group into C<OptionSet>. Normal group is main/default group of the C<OptionSet>, it has many Option can set by user at the same time.
+=end para
 
-class OptionSet does DeepClone { ... };
-=end code
+=item1 method get-normal() returns Group::Normal
+=begin para
+	Return current normal group.
+=end para
 
-=begin item
+=item1 method has-normal() returns Bool
+=begin para
+	Return normal group exists or not.
+=end para
 
-C<OptionSet> manager multi C<Option>, it provide many interface handle C<Option> add or access.
+=item1 method insert-multi(Str $opts) returns OptionSet
+=begin para
+	Insert a multi group into C<OptionSet>. Multi group has many C<Option> can set by user at the same time.
+=end para
 
-=end item
-=head3 method insert-normal(Str $opts) returns OptionSet
+=item1 method get-multi() returns Array[Group::Multi]
+=begin para
+	Return all multi group.
+=end para
 
-=begin head3
+=item1 method has-multi() returns Bool
+=begin para
+	Return has multi group or not.
+=end para
 
-Insert a normal group into C<OptionSet>. Normal group is main group of the C<OptionSet>, it has many Option can set by user at the same time.
+=item1 method insert-radio(Str $opts, :$force = False) returns OptionSet
+=begin para
+	Insert a radio group into C<OptionSet>. Radio group hold many C<Option> but can set only one at the same time. This group must be have value when C<:$force> is True.
+=end para
 
-=end head3
+=item1 method get-radio() returns Array[Group::Radio]
+=begin para
+	Return all radio group.
+=end para
 
-=head3 method insert-multi(Str $opts) returns OptionSet
+=item1 method has-radio() returns Bool
+=begin para
+	Return has radio group or not.
+=end para
 
-=begin head3
+=item1 method insert-all(&callback) returns OptionSet
+=begin para
+	Insert a handler can process all-NOA(non-option argument). It should call by parser when parse complete.
+=end para
 
-Insert a multi group into C<OptionSet>. Multi group has many C<Option> can set by user at the same time.
+=item1 method get-all() returns Callable
+=begin para
+	Return all-NOA handler callback.
+=end para
 
-=end head3
+=item1 method has-all() returns Bool
+=begin para
+	Return has all-NOA handler or not.
+=end para
 
-=head3 method insert-radio(Str $opts, :$force = False) returns OptionSet
+=item1 method insert-front(&callback) returns OptionSet
+=begin para
+	Insert a handler process the first NOA(non-option argument). It should call by parser when got first NOA.
+=end para
 
-=begin head3
+=item1 method get-front() returns Callable
+=begin para
+	Return front-NOA handler callback.
+=end para
 
-Insert a radio group into C<OptionSet>. Radio group hold many C<Option> but can set only one at the same time. This group must be have value when C<:$force> is True.
+=item1 method has-front() returns Bool
+=begin para
+	Return has front-NOA handler or not.
+=end para
 
-=end head3
+=item1 method insert-each(&callback) returns OptionSet
+=begin para
+	Insert a handler process every NOA(non-option argument). It should call by parser when got an NOA everytime.
+=end para
+
+=item1 method get-each() returns Callable
+=begin para
+	Return each-NOA handler callback.
+=end para
+
+=item1 method has-each() returns Bool
+=begin para
+	Return has each-NOA handler or not.
+=end para
 
 =end pod
