@@ -2,43 +2,65 @@
 
 A command line parsing tool which written in Perl6 .
 
-This module can help you parsing command line arguments. You can manager multi `OptionSet` just like defined multi sub `MAIN`, and `OptionSet` is a collection of multiple option which can used by `getopt` function interface. A option can be one of several `Option`, such as Integer、String etc .  Option can construct use string liter such as "c|count=i". This module provide both function and object-oriented interface, and you can use your custom parser when parsing.  
+Getopt::Kinoko is a powerful command line parsing module, support function style interface getopt> can handle a single OptionSet and OO style interface which can handle multi OptionSet at same time(just as overload the MAIN routine). OptionSet is a class used to describe a set of Option, It support group the Options together with Group::Normal Group::Radio Group::Multi Group, and you can also set a NonOption::Front NonOption::All NonOption handle user input non-option parameters. The option of OptionSet can be one kind of Option::String Option::Integer Option::Boolean etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through OptionSet's interface set their default value and callback funtion. 
 
-这个模块可以帮助你解析命令行的参数。本模块支持处理多组选项配置，就像定义多个`MAIN`那样。一个单独的选项配置含有多种选项，亦可单独使用函数接口解析。选项目前有整型、字符串、数组、哈希以及逻辑五种类型，选项的构造使用简单的字符串模式，比如`c|count=i`。本模块的接口目前有面向对象以及函数式接口，解析命令行的时候你还可以根据规则自定义自己的解析器。
+Getopt::Kinoko是一个强大的命令行解析模块，支持使用函数式接口处理单个OptionSet以及面向对象接口处理多个OptionSet(就如同重载的MAIN函数)，OptionSet是用来描述一组选项的类，OptionSet支持以normal(普通选项)、radio(单一选项)、multi(多选选项)等方式把选项组合在一起，并且还可以设置OptionSet的front(第一个非选项参数处理设施)、all(所有非选项参数处理设施)处理用户输入的非选项参数。Getopt::Kinoko，OptionSet中的选项可以是string(字符串)、integer(整数)、boolean(布尔)等选项中的一种，选项使用字符串来描述基本配置，你可以通过OptionSet的接口设置它们的默认值以及当选项被用户设置时的回调函数。
 
 ## Usage
 
+### Find file example
+
 ```Perl6
-use v6;
+#!/usr/bin/env perl6
+
 use Getopt::Kinoko;
 
-my $optset = OptionSet.new();	# create a OptionSet
+my OptionSet $opts .= new();
 
-$optset.insert-normal("h|help=b;v|version=b;?=b"); # insert a normal group 
-$optset.insert-multi("a|a-option=i;b|b-option=i;") # insert a multi group
-$optset.insert-radio("r|sort-by-row=b;c|sort-by-column=b;", :force); # insert a radio group
-$optset.push-option("o|other-option=s"); # push option to normal group
-$optset.push-option(
-	"hd|has-default-value=s",
-	"default-value",
-	callback => -> $value {
-		# do something
-	}
-);	# push a option has default value and has a callback
-$optset.insert-front(&front-callback);
-$optset.insert-all(&all-callback);
+$opts.insert-normal("h|help=b;v|version=b;");
+$opts.insert-multi("w=b;");
+$opts.insert-radio("d|directory=b;f|file=b;l|link=b;", :force);
+$opts.push-option(
+  "size-limit=i",
+  callback => -> \value {
+    die "Invalid integer value."
+      if value !~~ Int;
+  }
+);
+&main(getopt($opts, :gnu-style));
 
+sub main(@noa) {
+  die "Not support multi keyword"
+    if +@noa > 2;
 
-my @noa = getopt($optset, :gnu-style, prefix => "get-", :generate-method); # support gnu-style
+  die "Need more arguments"
+    if +@noa < 2;
 
-# process @noa
+  die "Version 0.0.1"
+    if $opts{'v'};
 
-sub front-callback(Argument $arg) {
-	# do something to $arg 
+  die "{$*PROGRAM-NAME} " ~ $opts.usage
+    if $opts{'h'} || $opts{'v'};
+
+  my ($dir, $key) = @noa;
+
+  die "Invalid directory {$dir}"
+    if $dir.IO !~~ :d;
+
+  search($opts, $dir, $key, -> $file { say $file.path(); });
 }
 
-sub all-callback(Argument @args) {
-	# process @args when parse complete
+sub search(OptionSet $opts, Str $dir, Str $key, &callback) {
+  for $dir.IO.dir(:all) -> $file {
+    my $name = $file.basename;
+
+    next if $opts{'w'} && $name ne $key;
+    next if $opts{'d'} && !$file.d;
+    next if $opts{'f'} && (!$file.f || $file.s < $opts{'size-limit'}.Int);
+    next if $opts{'l'} && !$file.l;
+
+    &callback($file);
+  }
 }
 
 ```
@@ -47,7 +69,7 @@ sub all-callback(Argument @args) {
 
 ## Installation
 
- + install with panda
++ install with panda
 
 	`panda install Getopt::Kinoko`
 
