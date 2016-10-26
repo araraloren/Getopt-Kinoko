@@ -36,11 +36,12 @@ sub main(@noa) {
   die "Need more arguments"
     if +@noa < 2;
 
-  die "Version 0.0.1"
+  note "Version 0.0.1"
     if $opts{'v'};
 
-  die "{$*PROGRAM-NAME} " ~ $opts.usage
-    if $opts{'h'} || $opts{'v'};
+  if $opts{'h'} || $opts{'v'} {
+    note "{$*PROGRAM-NAME} " ~ $opts.usage; exit 0; 
+  }
 
   my ($dir, $key) = @noa;
 
