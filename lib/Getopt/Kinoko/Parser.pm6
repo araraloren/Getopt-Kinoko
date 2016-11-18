@@ -15,7 +15,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset) is export returns Arra
 
     my regex lprefix { '--' }
     my regex sprefix { '-'  }
-    my regex optname { .*   { $optname = ~$/; } }
+    my regex optname { .+   { $optname = ~$/; } }
 
     while +@args > 0 {
         my \arg = @args.shift;
@@ -76,7 +76,7 @@ multi sub kinoko-parser(@args is copy, OptionSet \optset, $gnu-style) is export 
 
     my regex lprefix    { '--' }
     my regex sprefix    { '-'  }
-    my regex optname    { <-[\=]>* { $optname = ~$/; } }
+    my regex optname    { <-[\=]>+ { $optname = ~$/; } }
     my regex optvalue   { .*   }
 
     while +@args > 0 {
