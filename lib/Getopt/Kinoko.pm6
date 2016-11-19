@@ -208,7 +208,8 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 class Getopt does Associative { ... };
 =begin para
-	C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>. C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
+	C<Getopt> class provides an OO style interface. It can manager multi C<OptionSet>.
+    C<Getopt> support name-based lookup operator, and the key is C<OptionSet>'s name.
 =end para
 
 =item1 method new(:$generate-method, :$gnu-style)
