@@ -85,7 +85,7 @@ sub main(@pid, OptionSet \opts) {
         my Int $n = do given opts<type> {
             when $BAIDU {
                 if content ~~ /'<span class="red">'(\d+)'</span>'/ {
-                    $/[0];
+                    $/[0].Int;
                 }
                 else {
                     0
@@ -134,7 +134,7 @@ sub main(@pid, OptionSet \opts) {
             given opts<type> {
                 when $BAIDU {
                     if $content ~~ m:g/\<img \s+
-                        class\=\"BDE_Image\" \s+
+                        class\=\"BDE_Image\" <-[\>]>+?
                         src\=\"(<-[\"]>+)\" \s+
                         / {
                         $dir.IO.mkdir if $dir.IO !~~ :d;
@@ -143,6 +143,9 @@ sub main(@pid, OptionSet \opts) {
                             &noteMessage( "Fetch picture {picture.[0]}", 2);
                             QX("wget -O {$dir}/{$count++}.jpg {picture.[0].Str} -q");
                         }
+                    }
+                    else {
+                        &noteMessage( "Parse page {$i} picture urls failed!", 2);
                     }
                 }
                 when $ACFUN {
@@ -156,6 +159,9 @@ sub main(@pid, OptionSet \opts) {
                             &noteMessage( "Fetch picture {picture.[0]}", 2);
                             QX("wget -O {$dir}/{$count++}.jpg {picture.[0].Str} -q");
                         }
+                    }
+                    else {
+                        &noteMessage( "Parse page {$i} picture urls failed!", 2);
                     }
                 }
             }
