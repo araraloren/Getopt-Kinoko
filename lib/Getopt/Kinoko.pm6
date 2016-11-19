@@ -178,7 +178,20 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =head1 DESCRIPTION
 
 =begin para
-	B<Getopt::Kinoko> is a powerful command line parsing module, support function style interface C<&getopt> can handle a single C<OptionSet> and OO style interface which can handle multi C<OptionSet at> same time(just as overload the MAIN routine). C<OptionSet> is a class used to describe a set of C<Option>, It support group the Options together with C<Group::Normal> C<Group::Radio> C<Group::Multi> C<Group>, and you can also set a C<NonOption::Front> C<NonOption::All> C<NonOption> handle user input non-option parameters. The option of OptionSet can be one kind of C<Option::String> C<Option::Integer> C<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe basic configuration, and you can through B<OptionSet's> interface set their default value and callback funtion.
+	B<Getopt::Kinoko> is a powerful command line parsing module, support function
+    style interface C<&getopt> can handle a single C<OptionSet> and OO style interface
+    which can handle multi C<OptionSet at> same time(just as overload the MAIN routine).
+    C<OptionSet> is a class used to describe a set of C<Option>, It support group the
+    Options together with C<Group::Normal> C<Group::Radio> C<Group::Multi> C<Group>,
+    and you can also set a C<NonOption::Front> C<NonOption::All> C<NonOption::Each> handle
+    user input non-option parameters.
+    The option of OptionSet can be one kind of C<Option::String> C<Option::Integer>
+    C<Option::Boolean> etc. They use a simple string such as "h|help=b;" describe
+    basic configuration, and you can through B<OptionSet's> interface set their
+    default value and callback funtion.
+    Throw a C<X::Kinoko::Fail> exception inside C<NonOption> tell C<&parser> parse failed,
+    so C<&parser> will match next C<OptionSet> of C<Getopt>. You can do same thing in
+    callback  which you specify when you push a option into C<OptionSet>.
 =end para
 
 =head1 COPYRIGHT
@@ -200,7 +213,9 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 method new(:$generate-method, :$gnu-style)
 =begin para
-	Create a C<Getopt> manager OptionSet. Set I<generate-method> flag if you want generate option get method for C<OptionSet>. If you want your program support B<gnu-style> please use I<gnu-style> flag.
+	Create a C<Getopt> manager OptionSet. Set I<generate-method> flag if you want
+    generate option get method for C<OptionSet>. If you want your program support
+    B<gnu-style> please use I<:$gnu-style> flag.
 =end para
 
 =item1 multi method push(Str $name, OptionSet $optset) returns Getopt
@@ -220,7 +235,8 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 method parse(@!args = @*ARGS, Str :$prefix="", :&parser = &kinoko-parse) returns Array
 =begin para
-	Use C<&parser> parsing command line arguments C<@!args>, use C<$prefix> as method prefix if C<$generate-method> flag is True. The method return all I<Non-Option-Argument>.
+	Use C<&parser> parsing command line arguments C<@!args>, use C<$prefix> as method
+    prefix if C<$generate-method> flag is True. The method return all I<Non-Option-Argument>.
 =end para
 
 =item1 multi method usage(Str $name)
@@ -230,7 +246,7 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 multi method usage()
 =begin para
-	Generate a full usage message with C<$*PROGRAM-NAME> for all OptionSet.
+	Generate a full usage message with I<$*PROGRAM-NAME> for all OptionSet.
 =end para
 
 =item1  other
@@ -250,7 +266,8 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 method insert-normal(Str $opts) returns OptionSet
 =begin para
-	Insert a normal group into C<OptionSet>. Normal group is main/default group of the C<OptionSet>, it has many Option can set by user at the same time.
+	Insert a normal group into C<OptionSet>. Normal group is main/default group of the
+    C<OptionSet>, it has many Option can set by user at the same time.
 =end para
 =begin code
 	$optset.insert-normal("h|help=b;v|version=b;?=b;|usage=b;");
@@ -283,7 +300,8 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 method insert-radio(Str $opts, :$force = False) returns OptionSet
 =begin para
-	Insert a radio group into C<OptionSet>. Radio group hold many C<Option> but can set only one at the same time. This group must be have value when C<:$force> is True.
+	Insert a radio group into C<OptionSet>. Radio group hold many C<Option> but
+    can set only one at the same time. This group must be have value when C<:$force> is True.
 =end para
 
 =item1 method get-radio() returns Array[Group::Radio]
@@ -341,14 +359,14 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 	Return has each-NOA handler or not.
 =end para
 
-=item1 multi method push-option(Str $opt, :&callback, :$normal) returns OptionSet
+=item1 multi method push-option(Str $opt, :&callback, :$comment, :$normal) returns OptionSet
 =begin para
 	Insert a C<Option> into normal group. C<&callback> will be call When option set by user.
 =end para
 
-=item1 multi method push-option(Str $opt, $value, :&callback, :$normal) returns OptionSet
+=item1 multi method push-option(Str $opt, $value, :&callback, :$comment, :$normal) returns OptionSet
 =begin para
-	Insert a C<Option> has a default value into normal group.
+	Insert a C<Option> has a default value into normal group. C<&callback> will be call When option set by user.
 =end para
 
 =item1 method append-options(Str $opts, :$normal) returns OptionSet
@@ -368,17 +386,24 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 
 =item1 method set-value(Str $name, $value, :$long, :$short) returns Bool
 =begin para
-	Set C<Option> C<$name> value to C<$value>. Return C<False> if value check failed or C<Option> not exists. The method not call C<&callback> associate with C<Option> C<$name>.
+	Set C<Option> C<$name> value to C<$value>. Return C<False> if value check failed or
+    C<Option> not exists. The method not call C<&callback> associate with C<Option> C<$name>.
 =end para
 
 =item1 method set-value-callback(Str $name, $value, :$long, :$short) returns Bool
 =begin para
-	Set C<Option> C<$name> value to C<$value> and call C<&callback> associate with C<Option> C<$name>. Return C<False> if value check failed or C<Option> not exists.
+	Set C<Option> C<$name> value to C<$value> and call C<&callback> associate with
+    C<Option> C<$name>. Return C<False> if value check failed or C<Option> not exists.
 =end para
 
 =item1 method set-callback(Str $name, &callback, :$long, :$short) returns Bool
 =begin para
 	Set C<Option> C<$name> callback to &callback.
+=end para
+
+=item1 method set-comment(Str $name, $comment, :$long, :$short) returns Bool
+=begin para
+    Set C<Option> comment.
 =end para
 
 =item1 method has-value(Str $name, :$long, :$short) returns Bool
@@ -435,6 +460,19 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =item1 method deep-clone() returns OptionSet
 =begin para
 	Return a copy of current C<OptionSet>.
+=end para
+
+=item1 method comment() returns Array
+=begin para
+    Return a B<Array> contains B<Option's> I<long-name> in the first column or
+    I<short-name> in the middle column and I<comment> in the last column, that
+    is ("--long-option", "-short-option", "option comment").
+=end para
+
+=item1 method comment($indent) returns Array
+=begin para
+    Return a table-formated B<Array> contains B<Option's> name in the first column and
+    I<comment> in the second column, that is ("-short-option|--long-option", "option comment").
 =end para
 
 =end pod
