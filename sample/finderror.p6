@@ -635,7 +635,7 @@ class ErrorInfoPrinter {
                     for ^(+@$line - 1) Z @max-width[0 .. * - 2] -> (\col_i, \width) {
                         @t.push("{" " x (width - @$line-width.[col_i])}{$line.[col_i]}");
                     }
-                    @t.push($line.[* - 1]);
+                    @t.push("\t" ~ $line.[* - 1]); # Don't format last column 
                     @table.push(@t);
                 }
             }
