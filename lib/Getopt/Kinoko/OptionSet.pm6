@@ -288,9 +288,9 @@ class OptionSet does DeepClone {
 			@comment.push([
 				do {
 					my $str = "";
-					$str ~= '--' ~ $opt.short-name if $opt.is-short;
+					$str ~= '-'  ~ $opt.short-name if $opt.is-short;
 					$str ~= "|" if $opt.is-short && $opt.is-long;
-					$str ~= '-'  ~ $opt.long-name  if $opt.is-long;
+					$str ~= '--' ~ $opt.long-name  if $opt.is-long;
 					$str ;
 				},
 				$opt.comment
@@ -305,7 +305,7 @@ class OptionSet does DeepClone {
 					if $line.[col_i] > @max[col_i];
 			}
 		}
-		@max = @max.map: { $_ + $indent }; 
+		@max = @max.map: { $_ + $indent };
 		for @width Z @comment -> ($line-width, $line) {
 			my @t;
 			for ^(+@$line - 1) Z @max[0 .. * - 2] -> (\col_i, \width) {
