@@ -6,6 +6,8 @@ use Getopt::Kinoko;
 constant $VERSIONS = "version 0.1.1, create by Loren.";
 constant $TEMPFILE = "snippet";
 constant $LINUXTMP = '/tmp/';
+constant $LANG_C   = "c";
+constant $LANG_CXX = "cpp";
 
 state $is-win32;
 
@@ -87,7 +89,7 @@ sub snippet_initGetopt() {
     #= set default value for c
     $opts-c{'include'} = <stdio.h>;
     $opts-c.insert-front( -> $arg {
-        if $arg.value ne "c" || $arg.index != 0 {
+        if $arg.value ne $LANG_C || $arg.index != 0 {
             X::Kinoko::Fail.new().throw;
         }
     });
@@ -96,18 +98,18 @@ sub snippet_initGetopt() {
     #= set default value for cpp
     $opts-cpp{'include'} = <iostream>;
     $opts-cpp.insert-front( -> $arg {
-        if $arg.value ne "cpp" || $arg.index != 0 {
+        if $arg.value ne $LANG_CXX || $arg.index != 0 {
             X::Kinoko::Fail.new().throw;
         }
     });
 
-    Getopt.new().push('c', $opts-c).push('cpp', $opts-cpp);
+    Getopt.new().push($LANG_C, $opts-c).push($LANG_CXX, $opts-cpp);
 }
 
 sub main(@args, Getopt \getopt) {
     my ($language, $opts) = (getopt.current, getopt{getopt.current});
 
-    if $language eq "" || $language !(elem) < c cpp > {
+    if $language eq "" || $language !(elem) ( $LANG_C, $LANG_CXX ) {
         &printHelpMessage(getopt);
         exit 1;
     }
@@ -126,7 +128,7 @@ sub main(@args, Getopt \getopt) {
         unless &runCompiler($language, $opts, @args);
 }
 
-sub runCompiler(Str $language where $language ~~ /c|cpp/, OptionSet \opts, @args) {
+sub runCompiler(Str $language where $language ~~ /"{$LANG_C}"|"{$LANG_CXX}"/, OptionSet \opts, @args) {
     ProcessTarget.new(
         optset => opts,
         target => Compiler.new(
@@ -181,6 +183,8 @@ class Compiler {
 
     method doCompile {
         my $compiler = self.getCompiler($!optset<c>, $!language);
+
+        self.installSignal;
         try {
             my $proc = run $compiler, @!compile-args, :in;        # run方法执行shell命令
             note("exec cmd info -> $compiler" ~ @!compile-args.perl)
@@ -225,16 +229,19 @@ class Compiler {
 		else {
 			@!compile-args.push('-o', $!target);
 		}
-        @!compile-args.push("-x{$!language}", '-');
+        @!compile-args.push(
+            "-x{%{ $LANG_C => 'c', $LANG_CXX => 'c++' }{$!language}}",
+            '-'
+        );
 	}
 
     method getCompiler(Str $Compiler, Str $language) {
         given $Compiler {
             when /gcc/ {
-                return {c => 'gcc', cpp => 'g++'}{$language};
+                return {$LANG_C => 'gcc', $LANG_CXX => 'g++'}{$language};
             }
             when /clang/ {
-                return {c => 'clang', cpp => 'clang++'}{$language};
+                return {$LANG_C => 'clang', $LANG_CXX => 'clang++'}{$language};
             }
         }
     }
@@ -282,6 +289,15 @@ class Compiler {
         self.incodeFromOV('#include <', '>', $!optset<i>)
             if $!optset.has-value('i');
     }
+
+    method installSignal {
+        signal(SIGINT).tap(
+            {
+                note "Received a SIGINT signal, Quit" if $!optset<debug>;
+                unlink $!target if $!target.IO ~~ :e or "Can not unlink {$!target}: $!";
+            }
+        );
+    }
 }
 
 class ProcessTarget {
@@ -292,12 +308,21 @@ class ProcessTarget {
     method process {
         self.chmod;
         note "run target -> " ~ $!target if $!optset<debug>;
-        if $!optset<S> || $!optset<E> {
-            self.catTarget();
+        try {
+            if $!optset<S> || $!optset<E> {
+                self.catTarget();
+            }
+            else {
+                self.runTarget();
+            }
+            CATCH {
+                default {
+                    self.clean;
+                    ...
+                }
+            }
         }
-        else {
-            self.runTarget();
-        }
+        self.clean;
     }
 
     method chmod {
@@ -305,10 +330,16 @@ class ProcessTarget {
     }
 
     method runTarget {
-        promptUser(QX("{( $is-win32 ?? 'start ' !! '' ) ~ $!target} {@!args.join(' ')}"));
+        #| change it to run
+        run(( $is-win32 ?? 'start ' !! '' ) ~ $!target, @!args);
     }
 
     method catTarget {
         promptUser("{$!target}".IO.slurp);
+    }
+
+    method clean {
+        note "unlink {$!target}" if $!optset<debug>;
+        unlink $!target;
     }
 }
