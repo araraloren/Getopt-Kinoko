@@ -4,8 +4,14 @@ use Getopt::Kinoko;
 
 constant $TIEBA_URI_PREFIX = "http://tieba.baidu.com/p/";
 constant $ACFUN_URI_PREFIX = "http://www.acfun.tv/a/";
+constant $GAMER_URI_PREFIX = "https://home.gamer.com.tw/creationDetail.php?sn=";
 constant $BAIDU = "baidu";
 constant $ACFUN = "acfun";
+constant $GAMER = "gamer";
+constant $TSOCKS_AF = 1;
+constant $TSOCKS_AO = 2;
+constant $TSOCKS_FO = 3;
+constant $TSOCKS_NO = 4;
 
 my OptionSet $opts .= new;
 
@@ -39,10 +45,30 @@ $opts.push-option(
     "type=s",
     $BAIDU,
     callback => -> $type {
-        die "Not a valid type, must be one of [{<baidu acfun>}]"
-            if $type !(elem) < baidu acfun >;
+        die "Not a valid type, must be one of [$BAIDU $ACFUN $GAMER]"
+            if $type !(elem) ($BAIDU, $ACFUN, $GAMER);
     },
-    comment => 'Current support website is baidu(fetch tieba picture) and acfun.'
+    comment => 'Current support website is baidu(fetch tieba picture) and acfun、gamer.'
+);
+$opts.push-option(
+    "o|output=s",
+    ".",
+    callback => -> $dir {
+        die "Not a valid directory"
+            if $dir.IO !~~ :d;
+    },
+    comment => 'Output directory, default is working directory.'
+);
+$opts.push-option(
+    "e=s",
+    "jpg",
+    comment => 'Output file extension, default is jpg.'
+);
+$opts.push-option(
+    "s|use-tsocks=i",
+    $TSOCKS_NO,
+    comment => "Use tsocks access website \{$TSOCKS_AF => access and fetch,
+                $TSOCKS_AO => access, $TSOCKS_FO => fetch, $TSOCKS_NO => no tsocks}, default is $TSOCKS_NO."
 );
 
 sub noteMessage(Str \str, Int \count = 0) {
@@ -64,13 +90,16 @@ sub main(@pid, OptionSet \opts) {
         when $ACFUN {
             $ACFUN_URI_PREFIX X~ @pid;
         }
+        when $GAMER {
+            $GAMER_URI_PREFIX X~ @pid;
+        }
     };
-
-    my &get-page = -> \uri {
+    my $access-s = (opts<s> == $TSOCKS_AF || $TSOCKS_AO) ?? "tsocks" !! "";
+    my &get-page = -> \opts, \uri {
         my $cmd = "";
         given opts{'tools'} {
             when /wget/ {
-                $cmd = "wget -O {$opts<t>} {uri} -q";
+                $cmd = "{$access-s} wget -O {$opts<t>} {uri} -q";
             }
             default {
                 &noteMessage("Not implement!");
@@ -78,7 +107,7 @@ sub main(@pid, OptionSet \opts) {
             }
         }
         QX($cmd);
-        $opts<t>.IO.open(enc => $opts{'encoding'}).slurp-rest;
+        opts<t>.IO.open(enc => opts{'encoding'}).slurp-rest;
     };
 
     my &get-npage = -> \opts, \content {
@@ -91,19 +120,22 @@ sub main(@pid, OptionSet \opts) {
                     0
                 }
             }
-            when $ACFUN {
+            default {
                 1;
             }
         };
         $n;
     };
-
+    my $fetch-s = (opts<s> eq $TSOCKS_AF || $TSOCKS_FO) ?? "tsocks" !! "";
+    my &fetch-picture = -> \opts, \dir, \count, \uri, \tsocks {
+        QX("{tsocks} {opts<tools>} -O {opts<o>.IO.abspath}/{dir}/{count}.{opts<e>} {uri} -q");
+    };
     for @uris -> \uri {
         my ($dir, $content, $npage, $beg, $end, $count);
 
         $dir        = @pid.shift;
         &noteMessage("Fetch page total count: {uri}");
-        $content    = &get-page(uri);
+        $content    = &get-page(opts, uri);
         if $content.chars < 1 {
             &noteMessage( "Failed!", 1);
             next;
@@ -117,11 +149,12 @@ sub main(@pid, OptionSet \opts) {
         loop (my $i = $beg; $i <= $end; ++$i) {
             &noteMessage( "Fetch page {$i} content", 2);
             $content = &get-page(
+                opts,
                 do given opts<type> {
                     when $BAIDU {
                         "{uri}?pn={$i}"
                     }
-                    when $ACFUN {
+                    default {
                         uri
                     }
                 }
@@ -135,13 +168,13 @@ sub main(@pid, OptionSet \opts) {
                 when $BAIDU {
                     if $content ~~ m:g/\<img \s+
                         class\=\"BDE_Image\" <-[\>]>+?
-                        src\=\"(<-[\"]>+)\" \s+
+                        src\=\"(<-[\"\>]>+)\" \s+
                         / {
                         $dir.IO.mkdir if $dir.IO !~~ :d;
                         &noteMessage( "Get {+@$/} picture url", 2);
                         for @$/ -> \picture {
                             &noteMessage( "Fetch picture {picture.[0]}", 2);
-                            QX("wget -O {$dir}/{$count++}.jpg {picture.[0].Str} -q");
+                            &fetch-picture( opts, $dir, $count++, picture.[0].Str, $fetch-s);
                         }
                     }
                     else {
@@ -150,14 +183,30 @@ sub main(@pid, OptionSet \opts) {
                 }
                 when $ACFUN {
                     if $content ~~ m:g/\<img \s+
-                        id\=\"bigImg\" \s+
-                        src\=\"(<-[\"]>+)\" \s+
+                        id\=\"bigImg\" <-[\>]>+?
+                        src\=\"(<-[\"\>]>+)\" \s+
                         / {
                         $dir.IO.mkdir if $dir.IO !~~ :d;
                         &noteMessage( "Get {+@$/} picture url", 2);
                         for @$/ -> \picture {
                             &noteMessage( "Fetch picture {picture.[0]}", 2);
-                            QX("wget -O {$dir}/{$count++}.jpg {picture.[0].Str} -q");
+                            &fetch-picture( opts, $dir, $count++, picture.[0].Str, $fetch-s);
+                        }
+                    }
+                    else {
+                        &noteMessage( "Parse page {$i} picture urls failed!", 2);
+                    }
+                }
+                when $GAMER {
+                    if $content ~~ m:g/\<img \s+
+                        <-[\>]>+?
+                        data\-src\=\"(<-[\"\>]>+)\" \s+
+                        / {
+                        $dir.IO.mkdir if $dir.IO !~~ :d;
+                        &noteMessage( "Get {+@$/} picture url", 2);
+                        for @$/ -> \picture {
+                            &noteMessage( "Fetch picture {picture.[0]}", 2);
+                            &fetch-picture( opts, $dir, $count++, picture.[0].Str, $fetch-s);
                         }
                     }
                     else {
