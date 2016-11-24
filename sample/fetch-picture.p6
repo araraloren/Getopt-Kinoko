@@ -94,7 +94,7 @@ sub main(@pid, OptionSet \opts) {
             $GAMER_URI_PREFIX X~ @pid;
         }
     };
-    my $access-s = (opts<s> == $TSOCKS_AF || $TSOCKS_AO) ?? "tsocks" !! "";
+    my $access-s = (opts<s> == $TSOCKS_AF | $TSOCKS_AO) ?? "tsocks" !! "";
     my &get-page = -> \opts, \uri {
         my $cmd = "";
         given opts{'tools'} {
@@ -126,7 +126,7 @@ sub main(@pid, OptionSet \opts) {
         };
         $n;
     };
-    my $fetch-s = (opts<s> eq $TSOCKS_AF || $TSOCKS_FO) ?? "tsocks" !! "";
+    my $fetch-s = (opts<s> eq $TSOCKS_AF | $TSOCKS_FO) ?? "tsocks" !! "";
     my &fetch-picture = -> \opts, \dir, \count, \uri, \tsocks {
         QX("{tsocks} {opts<tools>} -O {opts<o>.IO.abspath}/{dir}/{count}.{opts<e>} {uri} -q");
     };

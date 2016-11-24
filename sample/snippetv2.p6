@@ -27,13 +27,18 @@ sub snippet_initGetopt() {
 
     $opts.insert-normal("h|help=b;v|version=b;?=b;");
     $opts.insert-radio("S = b;E = b");
+    $opts.set-comment('h', 'print this help message.');
+    $opts.set-comment('v', 'print snippet version.');
+    $opts.set-comment('S', 'pass -S to compiler.');
+    $opts.set-comment('E', 'pass -E to compiler.');
     $opts.push-option("f|flags 	    = a");
     $opts.push-option("i|include 	= a");
     $opts.push-option("l|link 		= a");
     $opts.push-option("p|print 	    = b");
     $opts.push-option(" |pp 		= a");
     $opts.push-option(" |end        = s", '@@CODEEND');
-    $opts.push-option("t|           = b"); # do not delete temporary .c
+#    $opts.push-option("t|           = b"); # do not delete temporary .c
+#   cause new version snippet use stdin pass code to compiler
     $opts.push-option("e|           = a");
     $opts.push-option("I|           = a");
     $opts.push-option("D|           = a");
@@ -79,6 +84,20 @@ sub snippet_initGetopt() {
             if $Compiler !(elem) < gcc clang >;
         }
     );
+    $opts.set-comment('f', 'pass -<flags> such as -std=c++11 to compiler.');
+    $opts.set-comment('i', 'add include file.');
+    $opts.set-comment('l', 'link library when genrate executable binary.');
+    $opts.set-comment('p', 'print code which genrated by this script.');
+    $opts.set-comment('pp', 'add macro define under header include pre-process.');
+    $opts.set-comment('end', 'specify code end flag when used for end user input.');
+    $opts.set-comment('e', 'add code to generator.');
+    $opts.set-comment('I', 'add directory to INCLUDE-PATH.');
+    $opts.set-comment('L', 'add directory to LIRBRARY-PATH.');
+    $opts.set-comment('r', 'ignore -e, use user input code.');
+    $opts.set-comment('debug', 'open debug mode.');
+    $opts.set-comment('o', 'output temporary to specify directory.');
+    $opts.set-comment('m', 'change main function header.');
+    $opts.set-comment('c', 'specify compiler used, current support [clang, gcc].');
     #= set default value common
     $opts{'flags'} = <Wall Wextra Werror>;
 
@@ -94,7 +113,7 @@ sub snippet_initGetopt() {
         }
     });
     #= add using option
-    $opts-cpp.push-option("u|using 	= a");
+    $opts-cpp.push-option("u|using 	= a", comment => 'add using declare.');
     #= set default value for cpp
     $opts-cpp{'include'} = <iostream>;
     $opts-cpp.insert-front( -> $arg {
@@ -152,6 +171,11 @@ sub printHelpMessage(Getopt \getopt) {
     for getopt.keys -> $key {
         if getopt.current eq $key || getopt.current eq "" {
             $help ~= $*PROGRAM-NAME ~ " $key " ~ getopt{$key}.usage ~ " *\@args\n";
+
+            for getopt{$key}.comment(4) -> $line {
+                $help ~= (" " x 4) ~ @$line.join('') ~ "\n\n"
+                    if $line.[1].chars > 1;
+            }
         }
     }
     print $help;
