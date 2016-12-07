@@ -255,6 +255,8 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 	AT-KEY EXISTS-KEY keys values kv
 =end para
 
+
+
 =head2 OptionSet
 
 =item1 class OptionSet does DeepClone { ... };
@@ -474,6 +476,120 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =begin para
     Return a table-formated B<Array> contains B<Option's> name in the first column and
     I<comment> in the second column, that is ("-short-option|--long-option", "option comment").
+=end para
+
+
+
+=head2 Option
+
+=item1 role Option { ... };
+=begin para
+    An option instance is represent a command line option.
+=end para
+
+=item1 is-short returns Bool
+=begin para
+    Return True if the option support short name access.
+=end para
+
+=item1 is-long returns Bool
+=begin para
+    Return True if the option support long name access.
+=end para
+
+=item1 is-force returns Bool
+=begin para
+    Return True if the option is a force option.
+=end para
+
+=item1 is-integer returns Bool
+=begin para
+    Return True if the option is a integer option.
+=end para
+
+=item1 is-string returns Bool
+=begin para
+    Return True if the option is a string option.
+=end para
+
+=item1 is-boolean returns Bool
+=begin para
+    Return True if the option is a boolean option.
+=end para
+
+=item1 is-array returns Bool
+=begin para
+    Return True if the option is a array option.
+=end para
+
+=item1 is-hash returns Bool
+=begin para
+    Return True if the option is a hash option.
+=end para
+
+=item1 major-type returns Str
+=begin para
+    Return the type of option.
+=end para
+
+=item1 has-callback returns Bool
+=begin para
+    Return True if the option has a callback.
+=end para
+
+=item1 has-value returns Bool
+=begin para
+    Return True if the option has a value.
+=end para
+
+=item1 short-name returns Str
+=begin para
+    Return the option's short name.
+=end para
+
+=item1 long-name returns Str
+=begin para
+    Return the option's long name.
+=end para
+
+=item1 callback
+=begin para
+    Return the option's callback.
+=end para
+
+=item1 value
+=begin para
+    Return the option's value.
+=end para
+
+=item1 set-callback(&cb)
+=begin para
+    Set the option's callback.
+=end para
+
+=item1 set-comment(Str $cm)
+=begin para
+    Set the option's comment.
+=end para
+
+=item1 set-value($value)
+=begin para
+    Set the option's value
+=end para
+
+=item1 set-value-callback($value)
+=begin para
+    Set the option's value and call the callback of it.
+=end para
+
+=item1 comment returns Str
+=begin para
+    Return the comment of the option.
+=end para
+
+=item1 usage returns Str
+=begin para
+    Return a usage such as `short|long=<type>` of the option.
 =end para
 
 =end pod
