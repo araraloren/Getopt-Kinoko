@@ -3,6 +3,8 @@
 
 A command line parsing tool which written in Perl6 .
 
+image:https://travis-ci.org/araraloren/Getopt-Kinoko.svg?branch=master["Build Status", link="https://travis-ci.org/araraloren/Getopt-Kinoko"]
+
 == Description
 
 `Getopt::Kinoko` is a powerful command line parsing module, support function style
@@ -297,7 +299,7 @@ note "Version 0.0.1" if $opts.get-option('v').value();
 note "Version 0.0.1" if $opts.has-value('v');
 -----------------------------
 
-=== 样例
+=== Sample
 
 *   errno.p6
 
