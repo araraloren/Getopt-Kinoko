@@ -320,7 +320,7 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =item1 method insert-all(&callback) returns OptionSet
 =begin para
 	Insert a handler can process all-NOA(non-option argument). It should call by parser when parse complete.
-    Callback signature can be either (Argument $arg) or (Argument $arg, OptionSet $opts).
+    Callback signature can be either (Argument @arg) or (Argument @arg, OptionSet $opts).
 =end para
 
 =item1 method get-all() returns Callable
