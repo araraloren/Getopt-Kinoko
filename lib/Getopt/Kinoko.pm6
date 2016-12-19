@@ -320,6 +320,7 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =item1 method insert-all(&callback) returns OptionSet
 =begin para
 	Insert a handler can process all-NOA(non-option argument). It should call by parser when parse complete.
+    Callback signature can be either (Argument $arg) or (Argument $arg, OptionSet $opts).
 =end para
 
 =item1 method get-all() returns Callable
@@ -335,6 +336,7 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =item1 method insert-front(&callback) returns OptionSet
 =begin para
 	Insert a handler process the first NOA(non-option argument). It should call by parser when got first NOA.
+    Callback signature can be either (Argument $arg) or (Argument $arg, OptionSet $opts).
 =end para
 
 =item1 method get-front() returns Callable
@@ -350,6 +352,7 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 =item1 method insert-each(&callback) returns OptionSet
 =begin para
 	Insert a handler process every NOA(non-option argument). It should call by parser when got an NOA everytime.
+    Callback signature can be either (Argument $arg) or (Argument $arg, OptionSet $opts).
 =end para
 
 =item1 method get-each() returns Callable
