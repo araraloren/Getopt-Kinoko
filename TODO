@@ -8,5 +8,5 @@
 	+ add float option
 √ gnu-style not complete
 √ Option comment
-+ pass OptionSet when NonOption::All callback called
+√ pass OptionSet when NonOption::All callback called
 + save/restore config value
