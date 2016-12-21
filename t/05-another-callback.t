@@ -3,6 +3,7 @@
 use v6;
 use Test;
 use Getopt::Kinoko;
+use Getopt::Kinoko::OptionSet;
 use Getopt::Kinoko::Argument;
 use Getopt::Kinoko::NonOption;
 
