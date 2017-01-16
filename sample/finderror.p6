@@ -32,21 +32,36 @@ sub finderror() {
 
     $opts.=new;
     $opts.insert-normal("h|help=b;v|version=b;");
+    $opts.set-comment('h', "print this help message.");
+    $opts.set-comment('v', "print progream version.");
 
     $config = $opts.deep-clone;
     $config.append-options("l|list=b;s|set=s;");
     $config.insert-front(&getFrontCheckCallback("config"));
+    $config.set-comment('l', 'list configuration.');
+    $config.set-comment('s', 'set configuration value.');
 
     $opts.insert-multi("c|stdc-errno=b;1|win32-system-error=b;2|win32-socket-error=b;");
+    $opts.set-comment('c', 'query c errno list.');
+    $opts.set-comment('1', 'query win32 system error list(return value of GetLastError).');
+    $opts.set-comment('2', 'query win32 socket error list(return value of WSAGetLastError).');
 
     $update = $opts.deep-clone;
     $update.push-option("command=s");
     $update.insert-front(&getFrontCheckCallback("update"));
+    $update.set-comment('command', 'set fetch command, use %URI% specify uri and %FILE% as ouput file.');
 
     $opts. push-option("t|table-format=b");
     $opts.insert-multi("no-error=b;no-comment=b;no-number=b;");
     $opts.insert-multi("l|left=b;r|right=b;");
     $opts. push-option("indent=i", 2);
+    $opts.set-comment('t', 'print message with table format.');
+    $opts.set-comment('no-error', 'not print error name.');
+    $opts.set-comment('no-comment', 'not print error comment.');
+    $opts.set-comment('no-number', 'not print error number.');
+    $opts.set-comment('l', 'use left align for table-formater.');
+    $opts.set-comment('r', 'use right align for table-formater.');
+    $opts.set-comment('indent', 'indent width for table-formater.');
 
     ($list, $find) = ($opts, $opts.deep-clone);
     $list.insert-front(&getFrontCheckCallback("list"));
@@ -54,6 +69,11 @@ sub finderror() {
     $find.push-option("r|regex=b;");
     $find.push-option("i|ignore-case=b;");
     $find.insert-front(&getFrontCheckCallback("find"));
+    $find.set-comment('e', 'query error message with error name.');
+    $find.set-comment('m', 'query error message with error comment.');
+    $find.set-comment('n', 'query error message with error number.');
+    $find.set-comment('r', 'query error message in regex mode.');
+    $find.set-comment('i', 'query error message with ignore case.');
 
     my Getopt $getopt .= new(:gnu-style);
 
@@ -294,7 +314,24 @@ sub printHelpMessage(Getopt \getopt, Str \current) {
             $help ~= $*PROGRAM-NAME ~ " $key " ~ getopt{$key}.usage ~ "\n\n";
         }
     }
-    print $help.chomp;
+    my @all-comment;
+    for getopt.keys.sort() -> $key {
+        if current eq $key {
+            for getopt{$key}.comment(4) -> $line {
+                $help ~= " " ~ @$line.join("") ~ "\n\n";
+            }
+        }
+        elsif current eq "" {
+            @all-comment.append(getopt{$key}.comment());
+        }
+    }
+    print(+@all-comment > 0 ?? $help !! $help.chomp);
+    ErrorInfoPrinter.new(
+      table-format  => True,
+      indent        => 4,
+      align         => Align::LEFT
+    ).print(@all-comment, :newline) if +@all-comment > 0;
+    say "" if +@all-comment == 0;
 }
 
 sub printVersion() {
@@ -341,7 +378,7 @@ class LocalConfig {
             "{$GITHUB_PUBLIC}system.ls",
             "/usr/include",
             "/usr/include/errno.h",
-            "wget"
+            "lwp"
         ];
         %ret;
     }
@@ -538,10 +575,34 @@ class ListFetcher {
         wget => 'wget -q "%URI%" -O "%FILE%"',
         curl => 'curl -s "%URI%" -o "%FILE%"',
         axel => 'axel -q "%URI%" -o "%FILE%"',
+        lwp  => '',
     );
 
     multi method fetch(Str $uri where * ~~ /^'/'|^'./'/, Str $file) {
         $uri.IO.move($file.IO);
+    }
+
+    multi method fetch(Str $uri where $!tool ~~ /lwp/, Str $file, :$quite) {
+        use LWP::Simple;
+
+        try {
+            my $handle = $file.IO.open(:w);
+            -> \save {
+                if save ~~ Str {
+                    $handle.print(save);
+                }
+                else {
+                    $handle.write(save);
+                }
+            }(LWP::Simple.new.get($uri));
+            $handle.close();
+            CATCH {
+                default {
+                    note "Fetch {$uri} failed: {.Str}";
+                    ...
+                }
+            }
+        }
     }
 
     multi method fetch(Str $uri, Str $file, :$quite) {
@@ -568,7 +629,7 @@ class ListFetcher {
     method get-tool() {
         my $cmd;
 
-        if $!tool eq "wget" | "curl" | "axel" {
+        if $!tool eq "wget" | "curl" | "axel" | "lwp" {
             $cmd = %COMMAND{$!tool};
         }
         else {
@@ -586,9 +647,9 @@ class ErrorInfoPrinter {
     has $.align;
     has $.indent;
 
-    method print(@result) {
+    method print(@result, :$newline) {
         my @pt = $!table-format ?? self.tableFormat(@result) !! self.normalFormat(@result);
-        promptUser($_) for @pt;
+        promptUser($newline ?? $_ ~ "\n" !! $_) for @pt;
     }
 
     method normalFormat(@result) {
@@ -635,7 +696,7 @@ class ErrorInfoPrinter {
                     for ^(+@$line - 1) Z @max-width[0 .. * - 2] -> (\col_i, \width) {
                         @t.push("{" " x (width - @$line-width.[col_i])}{$line.[col_i]}");
                     }
-                    @t.push("\t" ~ $line.[* - 1]); # Don't format last column 
+                    @t.push("\t" ~ $line.[* - 1]); # Don't format last column
                     @table.push(@t);
                 }
             }

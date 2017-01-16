@@ -1,5 +1,6 @@
 #!/usr/bin/env perl6
 
+use LWP::Simple;
 use Getopt::Kinoko;
 
 constant $TIEBA_URI_PREFIX = "http://tieba.baidu.com/p/";
@@ -12,34 +13,39 @@ constant $TSOCKS_AF = 1;
 constant $TSOCKS_AO = 2;
 constant $TSOCKS_FO = 3;
 constant $TSOCKS_NO = 4;
+constant $TOOL_WGET = 'wget';
+constant $TOOL_CURL = 'curl';
+constant $TOOL_LWP  = 'lwp';
+constant $TEMPFILE  = '.page';
+constant $ENCODING  = 'latin1';
 
 my OptionSet $opts .= new;
 
 $opts.insert-normal("h|help=b");
 $opts.push-option(
     "t|tempfile=s",
-    ".page",
-    comment => "Temp file name used when wget fetch webpage, default is '.page'."
+    $TEMPFILE,
+    comment => "Temp file name used when wget fetch webpage. [{$TEMPFILE}]"
 );
 $opts.push-option(
     "tools=s",
-    "wget",
-    comment => "Which tool use to fetch webpage and picture, default is 'wget'."
+    $TOOL_LWP,
+    comment => "Which tool < {$TOOL_LWP} {$TOOL_CURL} {$TOOL_WGET} > use to fetch webpage and picture. [{$TOOL_LWP}]"
 );
 $opts.push-option(
     "encoding=s",
-    "latin1",
-    comment => "What encoding use of webpage, default is latin1."
+    $ENCODING,
+    comment => "What encoding use of webpage. [{$ENCODING}]"
 );
 $opts.push-option(
     "beg=i",
     1,
-    comment => 'The begin page fetched, default is 1.'
+    comment => 'The begin page fetched. [1]'
 );
 $opts.push-option(
     "end=i",
     1,
-    comment => 'The last page fetched, default is 1'
+    comment => 'The last page fetched. [1]'
 );
 $opts.push-option(
     "type=s",
@@ -62,13 +68,13 @@ $opts.push-option(
 $opts.push-option(
     "e=s",
     "jpg",
-    comment => 'Output file extension, default is jpg.'
+    comment => 'Output file extension. [jpg]'
 );
 $opts.push-option(
     "s|use-tsocks=i",
     $TSOCKS_NO,
     comment => "Use tsocks access website \{$TSOCKS_AF => access and fetch,
-                $TSOCKS_AO => access, $TSOCKS_FO => fetch, $TSOCKS_NO => no tsocks}, default is $TSOCKS_NO."
+                $TSOCKS_AO => access, $TSOCKS_FO => fetch, $TSOCKS_NO => no tsocks}. [{$TSOCKS_NO}]"
 );
 
 sub noteMessage(Str \str, Int \count = 0) {
@@ -98,8 +104,22 @@ sub main(@pid, OptionSet \opts) {
     my &get-page = -> \opts, \uri {
         my $cmd = "";
         given opts{'tools'} {
+            when /lwp/ {
+                if $access-s ne "tsocks" {
+                    my $handle = opts<t>.IO.open(:w);
+                    $handle.print(LWP::Simple.new.get(uri));
+                    $handle.close;
+                }
+                else {
+                    &noteMessage("LWP not support tsocks!");
+                    exit 0;
+                }
+            }
+            when /curl/ {
+                $cmd = "{$access-s} curl -o {opts<t>} {uri} -s";
+            }
             when /wget/ {
-                $cmd = "{$access-s} wget -O {$opts<t>} {uri} -q";
+                $cmd = "{$access-s} wget -O {opts<t>} {uri} -q";
             }
             default {
                 &noteMessage("Not implement!");
@@ -128,7 +148,31 @@ sub main(@pid, OptionSet \opts) {
     };
     my $fetch-s = (opts<s> eq $TSOCKS_AF | $TSOCKS_FO) ?? "tsocks" !! "";
     my &fetch-picture = -> \opts, \dir, \count, \uri, \tsocks {
-        QX("{tsocks} {opts<tools>} -O {opts<o>.IO.abspath}/{dir}/{count}.{opts<e>} {uri} -q");
+        my ($cmd, $file) = ("", "{opts<o>.IO.abspath}/{dir}/{count}.{opts<e>}");
+        given opts{'tools'} {
+            when /lwp/ {
+                if tsocks ne "tsocks" {
+                    my $handle = $file.IO.open(:w);
+                    $handle.write(LWP::Simple.new.get(uri));
+                    $handle.close;
+                }
+                else {
+                    &noteMessage("LWP not support tsocks!");
+                    exit 0;
+                }
+            }
+            when /curl/ {
+                $cmd = "{tsocks} curl -o {$file} {uri} -s";
+            }
+            when /wget/ {
+                $cmd = "{tsocks} wget -O {$file} {uri} -q";
+            }
+            default {
+                &noteMessage("Not implement!");
+                exit 0;
+            }
+        }
+        QX($cmd);
     };
     for @uris -> \uri {
         my ($dir, $content, $npage, $beg, $end, $count);
