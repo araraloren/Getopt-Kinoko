@@ -10,3 +10,6 @@
 √ Option comment
 √ pass OptionSet when NonOption::All callback called
 + save/restore config value
+
+√ front自动检查名称
+	auto check front
