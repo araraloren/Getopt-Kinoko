@@ -158,8 +158,20 @@ class OptionSet does DeepClone {
 		$!normal;
 	}
 
-	method insert-front(&callback) {
+	multi method insert-front(&callback) {
 		$!front = create-non-option(&callback, :front);
+		self;
+	}
+
+	multi method insert-front(@fronts) {
+		$!front = create-non-option(
+			-> $arg {
+				if $arg.index != 0 || $arg.value.Str !(elem) @fronts {
+					X::Kinoko::Fail.new().throw;
+				}
+			},
+			:front
+		);
 		self;
 	}
 
