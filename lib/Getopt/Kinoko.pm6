@@ -333,10 +333,16 @@ sub getopt(OptionSet \opset, @args = @*ARGS, Str :$prefix = "", :&parser = &kino
 	Return has all-NOA handler or not.
 =end para
 
-=item1 method insert-front(&callback) returns OptionSet
+=item1 multi method insert-front(&callback) returns OptionSet
 =begin para
 	Insert a handler process the first NOA(non-option argument). It should call by parser when got first NOA.
     Callback signature can be either (Argument $arg) or (Argument $arg, OptionSet $opts).
+=end para
+
+=item1 multi method insert-front(@fronts) returns OptionSet
+=begin para
+	Insert a handler process the first NOA(non-option argument). It should call by parser when got first NOA.
+    It will generate a callback ensure front name is one of C<@fronts>.
 =end para
 
 =item1 method get-front() returns Callable
