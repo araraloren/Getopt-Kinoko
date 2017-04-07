@@ -33,9 +33,7 @@ role Group does DeepClone {
 
     method append(Str $options) {
         for $options.split(';', :skip-empty) -> $optstr {
-            if $optstr !~~ /\s+/ {
-                @!options.push(create-option($optstr)); # :skip-empty has a bug 
-            }
+            @!options.push(create-option($optstr));
         }
         self;
     }
