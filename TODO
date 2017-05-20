@@ -13,3 +13,6 @@
 
 √ front自动检查名称
 	auto check front
+
+√ release a stable version v0.3.5
++ refactor module

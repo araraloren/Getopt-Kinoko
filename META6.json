@@ -1,9 +1,9 @@
 {
     "perl"        : "6.c",
     "name"        : "Getopt::Kinoko",
-    "version"     : "0.3.1",
+    "version"     : "0.3.5",
     "description" : "A command line parsing tool which written in Perl6",
-    "depends"     : ["Terminal::WCWidth"],
+    "depends"     : ["Terminal::Table"],
     "provides"    : {
         "Getopt::Kinoko"				    : "lib/Getopt/Kinoko.pm6",
         "Getopt::Kinoko::Exception"		    : "lib/Getopt/Kinoko/Exception.pm6",
@@ -17,9 +17,9 @@
     },
 	"auth" : "github:araraloren",
     "authors" : "Loren",
-    "source-url"  : "https://github.com/araraloren/Getopt-Kinoko/archive/v0.3.1.zip",
+    "source-url"  : "https://github.com/araraloren/Getopt-Kinoko/archive/v0.3.5.zip",
     "support" : {
         "bugtracker" : "https://github.com/araraloren/Getopt-Kinoko/issues",
-        "source" : "https://github.com/araraloren/Getopt-Kinoko/tree/v0.3.1"
+        "source" : "https://github.com/araraloren/Getopt-Kinoko/tree/v0.3.5"
     }
 }
