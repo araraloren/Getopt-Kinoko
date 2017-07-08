@@ -7,6 +7,8 @@ image:https://travis-ci.org/araraloren/Getopt-Kinoko.svg?branch=master["Build St
 
 == Description
 
+This module is  deprecated, please use https://github.com/araraloren/perl6-getopt-advance[Getopt::Advance] instead. 
+
 `Getopt::Kinoko` is a powerful command line parsing module, support function style
 interface getopt can handle a single `OptionSet` and OO style interface which can
 handle multi `OptionSet` at same time(just as overload the MAIN routine).
