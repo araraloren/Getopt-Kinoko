@@ -4,6 +4,7 @@
 A command line parsing tool which written in Perl6 .
 
 image:https://travis-ci.org/araraloren/Getopt-Kinoko.svg?branch=master["Build Status", link="https://travis-ci.org/araraloren/Getopt-Kinoko"]
+image:https://ci.appveyor.com/api/projects/status/8elyko0k3p4aqx0u/branch/master?svg=true["Windows Build Status", link="https://ci.appveyor.com/api/projects/status/8elyko0k3p4aqx0u?svg=true"]
 
 == Description
 
